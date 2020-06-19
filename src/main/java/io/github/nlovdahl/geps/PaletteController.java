@@ -33,5 +33,13 @@ public final class PaletteController {
   
   public Color getColor(int index) { return palette_.getColor(index); }
   
+  public int getSNESColorCode(int index) {
+    return palette_.getSNESColorCode(index);
+  }
+  
+  public String getSNESColorCodeString(int index) {
+    return palette_.getSNESColorCodeString(index);
+  }
+  
   private Palette palette_;
 }

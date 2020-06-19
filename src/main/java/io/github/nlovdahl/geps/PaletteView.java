@@ -19,7 +19,6 @@ import javax.swing.JTable;
 import javax.swing.JLabel;
 import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.Component;
-import java.awt.Color;
 
 /**
  * The view for the palette.
@@ -36,7 +35,6 @@ public final class PaletteView extends JTable {
     setTableHeader(null);  // do not show a table header
     
     setDefaultRenderer(Object.class, new PaletteRenderer());
-    
     
     if (palette_controller == null) {
       throw new NullPointerException(
@@ -72,8 +70,11 @@ public final class PaletteView extends JTable {
         int row, int column) {
       JLabel cell = (JLabel) super.getTableCellRendererComponent(
           table, value, is_selected, has_focus, row, column);
-      Color c = palette_controller_.getColor(row * 16 + column);
-      cell.setBackground(c);
+      // the corresponding palette entry decides the appearance of the cell
+      int index = row * 16 + column;
+      cell.setBackground(palette_controller_.getColor(index));
+      cell.setHorizontalAlignment(JLabel.CENTER);
+      cell.setText(palette_controller_.getSNESColorCodeString(index));
       
       return cell;
     }
