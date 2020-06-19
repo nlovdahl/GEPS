@@ -26,6 +26,7 @@ import javax.swing.JSeparator;
 import javax.swing.WindowConstants;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import java.beans.PropertyChangeEvent;
 import java.awt.Container;
 import java.awt.BorderLayout;
 import java.awt.event.WindowAdapter;
@@ -108,22 +109,30 @@ public final class MainWindow extends JFrame {
     JScrollPane palette_scroll = new JScrollPane(palette_view);
     
     // create the split panes that contain the views
-    JSplitPane tileset_canvas_split =
-      new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
-                     canvas_scroll, tileset_scroll);
-    tileset_canvas_split.setResizeWeight(0.2);
-    tileset_canvas_split.setContinuousLayout(true);
+    JSplitPane tileset_split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
+                                              canvas_scroll, tileset_scroll);
+    tileset_split.setResizeWeight(0.2);
+    tileset_split.setContinuousLayout(true);
     
-    JSplitPane tileset_canvas_palette_split =
-      new JSplitPane(JSplitPane.VERTICAL_SPLIT,
-                     tileset_canvas_split, palette_scroll);
-    tileset_canvas_palette_split.setResizeWeight(1);
-    tileset_canvas_palette_split.setContinuousLayout(true);
+    JSplitPane palette_split = new JSplitPane(JSplitPane.VERTICAL_SPLIT,
+                                              tileset_split, palette_scroll);
+    palette_split.setResizeWeight(1);
+    palette_split.setContinuousLayout(true);
+    
+    // control the divider's location by fixing its location if moved too far
+    palette_split.addPropertyChangeListener("dividerLocation",
+                                            (PropertyChangeEvent event) -> {
+      int location = (Integer) event.getNewValue();  // location div moved to
+      int min = palette_split.getHeight() -          // size for palette view
+              palette_view.getPreferredSize().height -
+              2 * palette_split.getDividerSize();
+      if (location < min) { palette_split.setDividerLocation(min); }
+    });
     
     // arrange the layout of the frame's components within the frame
     setLayout(new BorderLayout());
     Container pane = getContentPane();
-    pane.add(tileset_canvas_palette_split, BorderLayout.CENTER);
+    pane.add(palette_split, BorderLayout.CENTER);
     
     pack();
   }
