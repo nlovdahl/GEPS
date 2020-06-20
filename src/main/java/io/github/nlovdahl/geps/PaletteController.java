@@ -31,6 +31,10 @@ public final class PaletteController {
     palette_ = new Palette();
   }
   
+  public void setColor(int index, int r, int g, int b) {
+    palette_.setColor(index, r, g, b);
+  }
+  
   public Color getColor(int index) { return palette_.getColor(index); }
   
   public int getSNESColorCode(int index) {

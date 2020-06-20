@@ -19,6 +19,9 @@ import javax.swing.JTable;
 import javax.swing.JLabel;
 import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.Component;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseEvent;
+import java.awt.Point;
 
 /**
  * The view for the palette.
@@ -35,6 +38,21 @@ public final class PaletteView extends JTable {
     setTableHeader(null);  // do not show a table header
     
     setDefaultRenderer(Object.class, new PaletteRenderer());
+    
+    addMouseListener(new MouseListener() {
+      @Override
+      public void mouseClicked(MouseEvent event) {
+        // if it is a right-click (button 3) or control is pressed
+        if (event.getButton() == MouseEvent.BUTTON3 || event.isControlDown()) {
+          chooseColor(event.getPoint());
+        }
+      }
+      // do nothing for other situations
+      @Override public void mousePressed(MouseEvent e) {}
+      @Override public void mouseReleased(MouseEvent e) {}
+      @Override public void mouseEntered(MouseEvent e) {}
+      @Override public void mouseExited(MouseEvent e) {}
+    });
     
     if (palette_controller == null) {
       throw new NullPointerException(
@@ -63,6 +81,25 @@ public final class PaletteView extends JTable {
     bpp_ = bpp;
   }
   
+  // disallow the user from editing the cells in the table
+  @Override
+  public boolean isCellEditable(int row, int column) { return false; }
+  
+  /**
+   * Takes a point and allows the user to choose a different color for the cell
+   * at that point. This corresponds to changing the color entry in the palette.
+   * After this, the table is repainted to reflect this change.
+   * 
+   * @param point the selected point which should correspond to the cell / color
+   *              entry being chosen.
+   */
+  private void chooseColor(Point point) {
+    int index = 16 * rowAtPoint(point) + columnAtPoint(point);
+    palette_controller_.setColor(index, 0, 255, 0);
+    repaint();
+  }
+  
+  // control how the cells in the table are shown
   private final class PaletteRenderer extends DefaultTableCellRenderer {
     @Override
     public Component getTableCellRendererComponent(
