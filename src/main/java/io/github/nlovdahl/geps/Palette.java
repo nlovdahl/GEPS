@@ -28,9 +28,7 @@ import java.awt.Color;
  * @see PaletteView
  */
 public final class Palette {
-  /**
-   * Creates a new palette with default colors as its entries.
-   */
+  /** Creates a new palette with default colors as its entries. */
   public Palette() {
     colors_ = new Color[PALETTE_MAX_SIZE];
     for (int index = 0; index < PALETTE_MAX_SIZE; index++) {
@@ -63,6 +61,35 @@ public final class Palette {
    * @return the color in the specified index in the palette.
    */
   public Color getColor(int index) { return colors_[index]; }
+  
+  /**
+   * Sets the color for a specified index in the palette based on the given RGB
+   * components.
+   * 
+   * @param index the index in the palette of the color to set.
+   * @param r the value for the red component of the color.
+   * @param g the value for the green component of the color.
+   * @param b the value for the blue component of the color.
+   */
+  public void setColor(int index, int r, int g, int b) {
+    colors_[index] = new Color(r, g, b);
+  }
+  
+  /**
+   * Sets the color for a specified index in the palette based on the given
+   * color.
+   * 
+   * @param index the index in the palette of the color to set.
+   * @param color the color whose values will be used to set the color entry in
+   *              the palette.
+   * @throws NullPointerException if the given color is null.
+   */
+  public void setColor(int index, Color color) {
+    if (color == null) {
+      throw new NullPointerException("Cannot set null as color in palette.");
+    }  // else, we can proceed
+    colors_[index] = clampColor(color);
+  }
   
   /**
    * Returns an integer containing a color code that can be given to the SNES.
@@ -100,18 +127,40 @@ public final class Palette {
   }
   
   /**
-   * Sets the color for a specified index in the palette based on the given RGB
-   * components.
+   * Takes a color and clamps it to a range that can be handled by the SNES.
+   * A regular color (Java's Color) has 8 bits for each color channel while a
+   * color code for the SNES has only 5 bits. The color given is clamped by
+   * setting its 3 least significant bits to zero - the most significant 5 bits
+   * are left as they are.
    * 
-   * @param index the index in the Palette of the color to set.
-   * @param r the value for the red component of the color.
-   * @param g the value for the green component of the color.
-   * @param b the value for the blue component of the color.
+   * @param r the value for the red component of the color to be clamped.
+   * @param g the value for the green component of the color to be clamped.
+   * @param b the value for the blue component of the color to be clamped.
+   * @return the resulting clamped color.
    */
-  public void setColor(int index, int r, int g, int b) {
-    colors_[index] = new Color(r, g, b);
+  public static Color clampColor(int r, int g, int b) {
+    r &= 0xF8;
+    g &= 0xF8;
+    b &= 0xF8;
+    
+    return new Color(r, g, b);
   }
   
+  /**
+   * Takes a color and clamps it to a range that can be handled by the SNES.
+   * A regular color (Java's Color) has 8 bits for each color channel while a
+   * color code for the SNES has only 5 bits. The color given is clamped by
+   * setting its 3 least significant bits to zero - the most significant 5 bits
+   * are left as they are.
+   * 
+   * @param color the color to be clamped.
+   * @return the resulting clamped color.
+   */
+  public static Color clampColor(Color color) {
+    return clampColor(color.getRed(), color.getGreen(), color.getBlue());
+  }
+  
+  /** The maximum number of entries that a palette can have. */
   public static final int PALETTE_MAX_SIZE = 256;
   
   Color[] colors_;
