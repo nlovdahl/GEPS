@@ -72,7 +72,7 @@ public final class Palette {
    * @param b the value for the blue component of the color.
    */
   public void setColor(int index, int r, int g, int b) {
-    colors_[index] = new Color(r, g, b);
+    colors_[index] = clampColor(r, g, b);
   }
   
   /**
