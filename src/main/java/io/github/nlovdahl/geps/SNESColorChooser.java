@@ -15,8 +15,6 @@ GEPS. If not, see <https://www.gnu.org/licenses/>. */
 
 package io.github.nlovdahl.geps;
 
-import javax.swing.JDialog;
-import javax.swing.JFrame;
 import javax.swing.JColorChooser;
 import java.awt.Color;
 
@@ -27,17 +25,9 @@ import java.awt.Color;
  * 
  * @author Nicholas Lovdahl
  */
-public class SNESColorChooser extends JDialog {
-  public SNESColorChooser(JFrame parent) {
+public class SNESColorChooser extends JColorChooser {
+  public SNESColorChooser() {
     // create a dialog window that blocks input to the parent
-    super(parent, "GEPS - Color Picker", true,
-          parent.getGraphicsConfiguration());  // use the parent's look-and-feel
-    add(new JColorChooser());
-  }
-  
-  public Color pickColor() {
-    setVisible(true);
     
-    return new Color(0, 255, 0);
   }
 }

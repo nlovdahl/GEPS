@@ -104,8 +104,8 @@ public final class MainWindow extends JFrame {
     JScrollPane tileset_scroll = new JScrollPane(tileset_view);
     CanvasView canvas_view = new CanvasView(tileset_controller_);
     JScrollPane canvas_scroll = new JScrollPane(canvas_view);
-    PaletteView palette_view = new PaletteView(palette_controller_,
-                                                tileset_controller_.getBPP());
+    PaletteView palette_view = new PaletteView(this, palette_controller_,
+                                               tileset_controller_.getBPP());
     JScrollPane palette_scroll = new JScrollPane(palette_view);
     
     // create the split panes that contain the views
