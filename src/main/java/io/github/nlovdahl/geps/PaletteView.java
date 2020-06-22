@@ -18,6 +18,8 @@ package io.github.nlovdahl.geps;
 import javax.swing.JTable;
 import javax.swing.JLabel;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.JFrame;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseEvent;
@@ -29,7 +31,8 @@ import java.awt.Point;
  * @author Nicholas Lovdahl
  */
 public final class PaletteView extends JTable {
-  public PaletteView(PaletteController palette_controller, int bpp) {
+  public PaletteView(JFrame parent_frame, PaletteController palette_controller,
+                     int bpp) {
     super(16, 16);  // create a table with 16 rows / 16 columns
     setRowSelectionAllowed(false);
     setColumnSelectionAllowed(false);
@@ -66,6 +69,8 @@ public final class PaletteView extends JTable {
     }  // else, our parameters are valid and we can proceed
     
     palette_controller_ = palette_controller;
+    parent_frame_ = parent_frame;
+    snes_color_picker_ = new SNESColorChooser(parent_frame_);
     bpp_ = bpp;
   }
   
@@ -94,9 +99,12 @@ public final class PaletteView extends JTable {
    *              entry being chosen.
    */
   private void chooseColor(Point point) {
-    int index = 16 * rowAtPoint(point) + columnAtPoint(point);
-    palette_controller_.setColor(index, 0, 255, 0);
-    repaint();
+    Color chosen_color = snes_color_picker_.pickColor();
+    if (chosen_color != null) {
+      int index = 16 * rowAtPoint(point) + columnAtPoint(point);
+      palette_controller_.setColor(index, chosen_color);
+      repaint();
+    }
   }
   
   // control how the cells in the table are shown
@@ -118,5 +126,7 @@ public final class PaletteView extends JTable {
   }
   
   private final PaletteController palette_controller_;
+  private final JFrame parent_frame_;
+  private final SNESColorChooser snes_color_picker_;
   private int bpp_;
 }

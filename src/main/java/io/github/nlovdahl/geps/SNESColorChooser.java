@@ -15,39 +15,29 @@ GEPS. If not, see <https://www.gnu.org/licenses/>. */
 
 package io.github.nlovdahl.geps;
 
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JColorChooser;
 import java.awt.Color;
 
 /**
- * The controller for the palette. The controller handles making changes to the
- * palette's data model.
+ * A Color Picker interface which allows a user to select a color. This color
+ * will correspond to one supported by the SNES (5 bits for each of the RGB
+ * channels).
  * 
  * @author Nicholas Lovdahl
- * 
- * @see Palette
- * @see PaletteView
  */
-public final class PaletteController {
-  public PaletteController() {
-    palette_ = new Palette();
+public class SNESColorChooser extends JDialog {
+  public SNESColorChooser(JFrame parent) {
+    // create a dialog window that blocks input to the parent
+    super(parent, "GEPS - Color Picker", true,
+          parent.getGraphicsConfiguration());  // use the parent's look-and-feel
+    add(new JColorChooser());
   }
   
-  public Color getColor(int index) { return palette_.getColor(index); }
-  
-  public void setColor(int index, int r, int g, int b) {
-    palette_.setColor(index, r, g, b);
+  public Color pickColor() {
+    setVisible(true);
+    
+    return new Color(0, 255, 0);
   }
-  
-  public void setColor(int index, Color color) {
-    palette_.setColor(index, color);
-  }
-  
-  public int getSNESColorCode(int index) {
-    return palette_.getSNESColorCode(index);
-  }
-  
-  public String getSNESColorCodeString(int index) {
-    return palette_.getSNESColorCodeString(index);
-  }
-  
-  private Palette palette_;
 }

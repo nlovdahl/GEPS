@@ -163,5 +163,5 @@ public final class Palette {
   /** The maximum number of entries that a palette can have. */
   public static final int PALETTE_MAX_SIZE = 256;
   
-  Color[] colors_;
+  private final Color[] colors_;
 }
