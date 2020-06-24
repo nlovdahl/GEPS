@@ -157,6 +157,7 @@ public final class SNESColorChooser extends JDialog {
     new_color_label_.setText("New Color: " +
                              Palette.getSNESColorCodeString(color));
     new_color_label_.setBackground(color);
+    new_color_label_.setForeground(Palette.contrastColor(color));
     pack();  // dialog may need to be resized
   }
   
@@ -165,6 +166,7 @@ public final class SNESColorChooser extends JDialog {
     initial_color_label_.setText("Old Color: " +
                                  Palette.getSNESColorCodeString(color));
     initial_color_label_.setBackground(color);
+    initial_color_label_.setForeground(Palette.contrastColor(color));
     pack();  // dialog may need to be resized
   }
   

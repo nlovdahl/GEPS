@@ -99,14 +99,17 @@ public final class PaletteView extends JTable {
    */
   private void chooseColor(Point point) {
     // get the current color
-    int index = 16 * rowAtPoint(point) + columnAtPoint(point);
+    int row = rowAtPoint(point);
+    int column = columnAtPoint(point);
+    int index = 16 * row + column;
     Color chosen_color = palette_controller_.getColor(index);
     // allow the user to select a color, starting with the current color
     chosen_color = color_chooser_.chooseColor(chosen_color);
     
     if (chosen_color != null) {  // if the user made a choice (not null)
+      // update the palette controller and repaint the appropriate cell
       palette_controller_.setColor(index, chosen_color);
-      repaint();  // repaint needed to reflect change in the view
+      repaint(getCellRect(row, column, true));  // only repaint the one cell
     }
   }
   
@@ -118,11 +121,14 @@ public final class PaletteView extends JTable {
         int row, int column) {
       JLabel cell = (JLabel) super.getTableCellRendererComponent(
           table, value, is_selected, has_focus, row, column);
+      // retirve the corresponding color from the palette controller
+      Color cell_color = palette_controller_.getColor(row * 16 + column);
+      
       // the corresponding palette entry decides the appearance of the cell
-      int index = row * 16 + column;
-      cell.setBackground(palette_controller_.getColor(index));
+      cell.setBackground(cell_color);
+      cell.setForeground(Palette.contrastColor(cell_color));
       cell.setHorizontalAlignment(JLabel.CENTER);
-      cell.setText(palette_controller_.getSNESColorCodeString(index));
+      cell.setText(Palette.getSNESColorCodeString(cell_color));
       
       return cell;
     }

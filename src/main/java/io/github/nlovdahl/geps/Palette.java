@@ -163,9 +163,40 @@ public final class Palette {
    * 
    * @param color the color to be clamped.
    * @return the resulting clamped color.
+   * @throws NullPointerException if the given color is null.
    */
   public static Color clampColor(Color color) {
+    if (color == null) {
+      throw new NullPointerException("Cannot get contrast of null.");
+    }
+    
     return clampColor(color.getRed(), color.getGreen(), color.getBlue());
+  }
+  
+  /**
+   * Takes a color and returns either black or white, depending on which of
+   * those two colors should contrast best with the given color. This
+   * determination is based off of the luma of the given color.
+   * 
+   * @param color the color to find get a contrast for.
+   * @return a color, either black or white, which should contrast with the
+   *         given color.
+   * @throws NullPointerException if the given color is null.
+   */
+  public static Color contrastColor(Color color) {
+    if (color == null) {
+      throw new NullPointerException("Cannot get contrast of null.");
+    }
+    
+    float luma = 0.2126f * (color.getRed() / 255f) +
+                 0.7152f * (color.getGreen() / 255f) +
+                 0.0722f * (color.getBlue() / 255f);
+    
+    if (luma > 0.5f) {
+      return Color.BLACK;
+    } else {
+      return Color.WHITE;
+    }
   }
   
   /** The maximum number of entries that a palette can have. */
