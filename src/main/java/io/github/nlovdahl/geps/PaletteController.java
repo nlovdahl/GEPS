@@ -42,11 +42,11 @@ public final class PaletteController {
   }
   
   public int getSNESColorCode(int index) {
-    return palette_.getSNESColorCode(index);
+    return Palette.getSNESColorCode(palette_.getColor(index));
   }
   
   public String getSNESColorCodeString(int index) {
-    return palette_.getSNESColorCodeString(index);
+    return Palette.getSNESColorCodeString(palette_.getColor(index));
   }
   
   private Palette palette_;

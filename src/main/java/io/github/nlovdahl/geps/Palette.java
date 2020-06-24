@@ -95,14 +95,18 @@ public final class Palette {
    * Returns an integer containing a color code that can be given to the SNES.
    * The color code consists of the last (least significant) 16 bits
    * 
-   * @param index the index in the palette of the color to return a SNES color
-   *              code for.
+   * @param color the color for which to return a color code for.
    * @return an integer containing a color code that can be given to the SNES.
+   * @throws NullPointerException if the given color is null.
    */
-  public int getSNESColorCode(int index) {
-    int r = colors_[index].getRed();
-    int g = colors_[index].getGreen();
-    int b = colors_[index].getBlue();
+  public static int getSNESColorCode(Color color) {
+    if (color == null) {
+      throw new NullPointerException("Cannot get SNES color code for null.");
+    }
+    
+    int r = color.getRed();
+    int g = color.getGreen();
+    int b = color.getBlue();
     int snes_code = 0;
     // shift and pack the RGB components into 0RRRRRGG GGGBBBBB
     snes_code = snes_code | (r >> 3);
@@ -118,12 +122,16 @@ public final class Palette {
    * Returns a string with the color code that can be given to the SNES in a
    * hexadecimal format.
    * 
-   * @param index the index in the palette of the color to return a SNES color
-   *              code for.
+   * @param color color the color for which to return a color code string for.
    * @return a hex string corresponding to the color code to give to the SNES.
+   * @throws NullPointerException if the given color is null.
    */
-  public String getSNESColorCodeString(int index) {
-    return "0x" + Integer.toHexString(getSNESColorCode(index));
+  public static String getSNESColorCodeString(Color color) {
+    if (color == null) {
+      throw new NullPointerException("Cannot get SNES color code string for null.");
+    }
+    
+    return "0x" + Integer.toHexString(getSNESColorCode(color));
   }
   
   /**
