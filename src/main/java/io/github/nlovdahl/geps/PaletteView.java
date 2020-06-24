@@ -19,13 +19,11 @@ import javax.swing.JTable;
 import javax.swing.JLabel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.JFrame;
-import javax.swing.JDialog;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseEvent;
 import java.awt.Point;
-import javax.swing.JColorChooser;
 
 /**
  * The view for the palette.
@@ -70,8 +68,8 @@ public final class PaletteView extends JTable {
         "Cannot create PaletteView with more than 8 bits per pixel.");
     }  // else, our parameters are valid and we can proceed
     
-    parent_frame_ = parent_frame;
     palette_controller_ = palette_controller;
+    color_chooser_ = new SNESColorChooser(parent_frame);
     bpp_ = bpp;
   }
   
@@ -104,8 +102,8 @@ public final class PaletteView extends JTable {
     int index = 16 * rowAtPoint(point) + columnAtPoint(point);
     Color chosen_color = palette_controller_.getColor(index);
     // allow the user to select a color, starting with the current color
-    chosen_color = JColorChooser.showDialog(
-        parent_frame_, "Edit Color", chosen_color);
+    chosen_color = color_chooser_.chooseColor(chosen_color);
+    
     if (chosen_color != null) {  // if the user made a choice (not null)
       palette_controller_.setColor(index, chosen_color);
       repaint();  // repaint needed to reflect change in the view
@@ -130,7 +128,7 @@ public final class PaletteView extends JTable {
     }
   }
   
-  private final JFrame parent_frame_;
   private final PaletteController palette_controller_;
+  private final SNESColorChooser color_chooser_;
   private int bpp_;
 }
