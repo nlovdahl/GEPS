@@ -22,6 +22,7 @@ import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JLabel;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
 import java.awt.event.WindowAdapter;
@@ -71,9 +72,11 @@ public final class SNESColorChooser extends JDialog {
     color_chooser_.setPreviewPanel(new JPanel());  // disables preview
     new_color_label_ = new JLabel();
     new_color_label_.setHorizontalAlignment(JLabel.CENTER);
+    new_color_label_.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 14));
     new_color_label_.setOpaque(true);
     initial_color_label_ = new JLabel();
     initial_color_label_.setHorizontalAlignment(JLabel.CENTER);
+    initial_color_label_.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 14));
     initial_color_label_.setOpaque(true);
     // change the new color label when selections in the color chooser change
     color_chooser_.getSelectionModel().addChangeListener(
@@ -159,7 +162,7 @@ public final class SNESColorChooser extends JDialog {
   
   // change the text and background corresponding to the initial color
   private void setInitialColorLabel(Color color) {
-    initial_color_label_.setText("Initial Color: " +
+    initial_color_label_.setText("Old Color: " +
                                  Palette.getSNESColorCodeString(color));
     initial_color_label_.setBackground(color);
     pack();  // dialog may need to be resized
