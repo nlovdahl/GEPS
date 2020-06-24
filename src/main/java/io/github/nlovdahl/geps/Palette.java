@@ -128,10 +128,10 @@ public final class Palette {
    */
   public static String getSNESColorCodeString(Color color) {
     if (color == null) {
-      throw new NullPointerException("Cannot get SNES color code string for null.");
+      throw new NullPointerException("Cannot get SNES hex string for null.");
     }
-    
-    return "0x" + Integer.toHexString(getSNESColorCode(color));
+    // 0x + a 4 digit hex string, padding with leading zeroes if needed
+    return "0x" + String.format("%04x", getSNESColorCode(color)).toUpperCase();
   }
   
   /**
