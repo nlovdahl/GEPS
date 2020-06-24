@@ -19,12 +19,16 @@ import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JColorChooser;
 import javax.swing.JButton;
+import javax.swing.JPanel;
+import javax.swing.JLabel;
 import java.awt.Color;
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.ActionEvent;
+import javax.swing.BorderFactory;
+import javax.swing.event.ChangeEvent;
 import javax.swing.WindowConstants;
 
 /**
@@ -49,6 +53,7 @@ public final class SNESColorChooser extends JDialog {
           parent_frame.getGraphicsConfiguration());
     // treat closing the dialog like clicking on the cancel button
     setLocationByPlatform(true);
+    setResizable(false);
     setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
     addWindowListener(new WindowAdapter() {
       @Override
@@ -61,29 +66,49 @@ public final class SNESColorChooser extends JDialog {
     
     // create a custom color chooser
     color_chooser_ = new JColorChooser();
+    color_chooser_.setBorder(BorderFactory.createTitledBorder("Choose Color"));
+    // setup a custom preview for the chooser
+    color_chooser_.setPreviewPanel(new JPanel());  // disables preview
+    new_color_label_ = new JLabel();
+    new_color_label_.setHorizontalAlignment(JLabel.CENTER);
+    new_color_label_.setOpaque(true);
+    initial_color_label_ = new JLabel();
+    initial_color_label_.setHorizontalAlignment(JLabel.CENTER);
+    initial_color_label_.setOpaque(true);
+    // change the new color label when selections in the color chooser change
+    color_chooser_.getSelectionModel().addChangeListener(
+      (ChangeEvent event) -> { setNewColorLabel(color_chooser_.getColor());
+    });
     
     // create buttons to control this dialog and the chooser
     JButton select_button = new JButton(SELECT_OPTION);
     select_button.addActionListener(
-      (ActionEvent event) -> {buttonAction(event); }
+      (ActionEvent event) -> { buttonAction(event); }
     );
     JButton cancel_button = new JButton(CANCEL_OPTION);
     cancel_button.addActionListener(
-      (ActionEvent event) -> {buttonAction(event); }
+      (ActionEvent event) -> { buttonAction(event); }
     );
     
     // layout the chooser and buttons
     setLayout(new GridBagLayout());
     GridBagConstraints c = new GridBagConstraints();
-    // the color chooser should fill all top cells and resize both hor. / ver.
+    // add the labels for the new color and the initial color (previews)
     c.gridx = 0;
     c.gridy = 0;
     c.weightx = 1;
+    c.fill = GridBagConstraints.HORIZONTAL;
+    add(new_color_label_, c);
+    c.gridx = 1;
+    add(initial_color_label_, c);
+    // the color chooser should fill middle cells and resize both hor. / ver.
+    c.gridx = 0;
+    c.gridy = 1;
     c.gridwidth = 2;
     c.fill = GridBagConstraints.BOTH;
     add(color_chooser_, c);
     // add the buttons next
-    c.gridy = 1;
+    c.gridy = 2;
     c.gridwidth = 1;
     c.fill = GridBagConstraints.HORIZONTAL;
     add(select_button, c);
@@ -104,7 +129,11 @@ public final class SNESColorChooser extends JDialog {
    * @return the color selected by the user, or null if no color was selected.
    */
   public Color chooseColor(Color initial_color) {
-    color_chooser_.setColor(initial_color);  // set initial color as given
+    // set initial color as given (use some default if null)
+    if (initial_color == null) { initial_color = new Color(0, 0, 0); }
+    color_chooser_.setColor(initial_color);
+    setInitialColorLabel(initial_color);
+    
     setVisible(true);  // show dialog and block until selection or closure...
     
     if (option_.equals(SELECT_OPTION)) {  // if color was selected, return it
@@ -120,8 +149,26 @@ public final class SNESColorChooser extends JDialog {
     dispose();
   }
   
+  // change the text and background corresponding the the new color
+  private void setNewColorLabel(Color color) {
+    new_color_label_.setText("New Color: " +
+                             Palette.getSNESColorCodeString(color));
+    new_color_label_.setBackground(color);
+    pack();  // dialog may need to be resized
+  }
+  
+  // change the text and background corresponding to the initial color
+  private void setInitialColorLabel(Color color) {
+    initial_color_label_.setText("Initial Color: " +
+                                 Palette.getSNESColorCodeString(color));
+    initial_color_label_.setBackground(color);
+    pack();  // dialog may need to be resized
+  }
+  
   private String option_;
   private final JColorChooser color_chooser_;
+  private final JLabel new_color_label_;
+  private final JLabel initial_color_label_;
   
   private static final String CANCEL_OPTION = "Cancel";
   private static final String SELECT_OPTION = "Select";
