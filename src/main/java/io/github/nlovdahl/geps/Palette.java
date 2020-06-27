@@ -93,7 +93,7 @@ public final class Palette {
   
   /**
    * Returns an integer containing a color code that can be given to the SNES.
-   * The color code consists of the last (least significant) 16 bits
+   * The color code consists of the last (least significant) 16 bits.
    * 
    * @param color the color for which to return a color code for.
    * @return an integer containing a color code that can be given to the SNES.
@@ -122,7 +122,7 @@ public final class Palette {
    * Returns a string with the color code that can be given to the SNES in a
    * hexadecimal format.
    * 
-   * @param color color the color for which to return a color code string for.
+   * @param color color the color for which to return a color code string.
    * @return a hex string corresponding to the color code to give to the SNES.
    * @throws NullPointerException if the given color is null.
    */

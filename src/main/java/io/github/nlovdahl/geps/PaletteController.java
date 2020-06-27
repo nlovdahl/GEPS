@@ -16,6 +16,8 @@ GEPS. If not, see <https://www.gnu.org/licenses/>. */
 package io.github.nlovdahl.geps;
 
 import java.awt.Color;
+import java.util.Deque;
+import java.util.LinkedList;
 
 /**
  * The controller for the palette. The controller handles making changes to the
@@ -28,26 +30,142 @@ import java.awt.Color;
  */
 public final class PaletteController {
   public PaletteController() {
-    palette_ = new Palette();
+    current_palette_ = new Palette();
+    undo_states_ = new LinkedList<Palette>();
+    redo_states_ = new LinkedList<Palette>();
   }
   
-  public Color getColor(int index) { return palette_.getColor(index); }
+  /**
+   * Returns the color in the specified index in the palette of the palette
+   * controller. This method is a wrapper for the {@link Palette#getColor(int)}
+   * method.
+   * 
+   * @param index the index in the palette of the color to return. 
+   * @return the color in the specified index in the palette.
+   */
+  public Color getColor(int index) { return current_palette_.getColor(index); }
   
+  /**
+   * Sets the color for a specified index in the palette based on the given RGB
+   * components. This method is a wrapper for the
+   * {@link Palette#setColor(int, int, int, int)} method.
+   * 
+   * @param index the index in the palette of the color to set.
+   * @param r the value for the red component of the color.
+   * @param g the value for the green component of the color.
+   * @param b the value for the blue component of the color.
+   */
   public void setColor(int index, int r, int g, int b) {
-    palette_.setColor(index, r, g, b);
+    saveForUndo();
+    redo_states_.clear();
+    
+    current_palette_.setColor(index, r, g, b);
   }
   
+  /**
+   * Sets the color for a specified index in the palette based on the given
+   * color. This method is a wrapper for the
+   * {@link Palette#setColor(int, java.awt.Color)} method.
+   * 
+   * @param index the index in the palette of the color to set.
+   * @param color the color whose values will be used to set the color entry in
+   *              the palette.
+   */
   public void setColor(int index, Color color) {
-    palette_.setColor(index, color);
+    saveForUndo();
+    redo_states_.clear();
+    
+    current_palette_.setColor(index, color);
   }
   
+  /**
+   * Returns an integer containing a color code that can be given to the SNES.
+   * The color code consists of the last (least significant) 16 bits. This
+   * method is essentially a wrapper for the
+   * {@link Palette#getSNESColorCode(java.awt.Color)} method, although it uses
+   * an index to pick a color in the palette instead of taking a color directly.
+   * 
+   * @param index the index of the color for which to return a color code for.
+   * @return an integer containing a color code that can be given to the SNES.
+   */
   public int getSNESColorCode(int index) {
-    return Palette.getSNESColorCode(palette_.getColor(index));
+    return Palette.getSNESColorCode(current_palette_.getColor(index));
   }
   
+  /**
+   * Returns a string with the color code that can be given to the SNES in a
+   * hexadecimal format. This method is essentially a wrapper for the
+   * {@link Palette#getSNESColorCodeString(java.awt.Color)} method, although it
+   * uses an index to pick a color in the palette instead of taking a color
+   * directly.
+   * 
+   * @param index the index of the color for which to return a color code
+   *              string.
+   * @return a hex string corresponding to the color code to give to the SNES. 
+   */
   public String getSNESColorCodeString(int index) {
-    return Palette.getSNESColorCodeString(palette_.getColor(index));
+    return Palette.getSNESColorCodeString(current_palette_.getColor(index));
   }
   
-  private Palette palette_;
+  /**
+   * Returns whether it is possible to undo - that is, whether it is possible
+   * to revert to a previous state for the palette.
+   * 
+   * @return whether the palette's state can be undone.
+   */
+  public boolean canUndo() { return undo_states_.size() > 0; }
+  
+  /**
+   * Returns whether it is possible to redo - that is, whether it is possible
+   * to restore the palette to a previously undone states.
+   * 
+   * @return whether the palette's state can be redone.
+   */
+  public boolean canRedo() { return redo_states_.size() > 0; }
+  
+  /**
+   * Reverts the palette to its previous state. This method can be called
+   * multiple times to move back to further states so long as those states have
+   * been recorded. If it is not possible to undo, this does nothing.
+   */
+  public void undo() {
+    if (canUndo()) {
+      // if we hit the cap for redos, pop the oldest one before proceeding
+      if (redo_states_.size() >= MAX_REDOS) { redo_states_.removeLast(); }
+      // save the current state for a possible redo and restore the latest undo
+      redo_states_.addFirst(current_palette_);
+      current_palette_ = undo_states_.removeFirst();
+    }  // else, there is nothing to undo...
+  }
+  
+  /**
+   * Restores the palette to a previously undone state. This method can be
+   * called multiple times to move to further states so long as those states
+   * have been recorded. If it is not possible to redo, this does nothing.
+   */
+  public void redo() {
+    if (canRedo()) {
+      // if we hit the cap for undos, pop the oldest one before proceeding
+      if (undo_states_.size() >= MAX_UNDOS) { undo_states_.removeLast(); }
+      // push the current palette to the undos and pop the first redo palette
+      undo_states_.addFirst(current_palette_);
+      current_palette_ = redo_states_.removeFirst();
+    }  // else, there is nothing to redo
+  }
+  
+  private void saveForUndo() {
+    // if we hit the cap for undos, pop the oldest one before proceeding
+    if (undo_states_.size() >= MAX_UNDOS) { undo_states_.removeLast(); }
+    // make a copy of the palette in its current state and save it
+    undo_states_.addFirst(new Palette(current_palette_));
+  }
+  
+  /** The maximum number of states that will be recorded to be undone. */
+  public static final int MAX_UNDOS = 30;
+  /** The maximum number of states that will be recorded to be redone. */
+  public static final int MAX_REDOS = 30;
+  
+  private Palette current_palette_;
+  private final Deque<Palette> undo_states_;
+  private final Deque<Palette> redo_states_;
 }

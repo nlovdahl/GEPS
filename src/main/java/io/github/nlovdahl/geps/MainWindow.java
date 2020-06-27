@@ -52,6 +52,11 @@ public final class MainWindow extends JFrame {
     palette_controller_ = new PaletteController();
     tileset_controller_ = new TilesetController();
     
+    palette_view_ = new PaletteView(this, palette_controller_,
+                                    tileset_controller_.getBPP());
+    tileset_view_ = new TilesetView(tileset_controller_);
+    canvas_view_ = new CanvasView(tileset_controller_);
+    
     InitMainWindow();
   }
   
@@ -96,17 +101,22 @@ public final class MainWindow extends JFrame {
     exit_menu_item.addActionListener(this::ExitAction);
     file_menu.add(exit_menu_item);
     
+    JMenu edit_menu = new JMenu("Edit");  // edit menu initialization...
+    JMenuItem palette_undo_item = new JMenuItem("Undo Palette");
+    palette_undo_item.addActionListener(this::PaletteUndoAction);
+    edit_menu.add(palette_undo_item);
+    JMenuItem palette_redo_item = new JMenuItem("Redo Palette");
+    palette_redo_item.addActionListener(this::PaletteRedoAction);
+    edit_menu.add(palette_redo_item);
+    
     menu_bar.add(file_menu);
+    menu_bar.add(edit_menu);
     setJMenuBar(menu_bar);
     
     // initialize the views for the tileset, canvas, and palette
-    TilesetView tileset_view = new TilesetView(tileset_controller_);
-    JScrollPane tileset_scroll = new JScrollPane(tileset_view);
-    CanvasView canvas_view = new CanvasView(tileset_controller_);
-    JScrollPane canvas_scroll = new JScrollPane(canvas_view);
-    PaletteView palette_view = new PaletteView(this, palette_controller_,
-                                               tileset_controller_.getBPP());
-    JScrollPane palette_scroll = new JScrollPane(palette_view);
+    JScrollPane tileset_scroll = new JScrollPane(tileset_view_);
+    JScrollPane canvas_scroll = new JScrollPane(canvas_view_);
+    JScrollPane palette_scroll = new JScrollPane(palette_view_);
     
     // create the split panes that contain the views
     JSplitPane tileset_split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
@@ -124,7 +134,7 @@ public final class MainWindow extends JFrame {
                                             (PropertyChangeEvent event) -> {
       int location = (Integer) event.getNewValue();  // location div moved to
       int min = palette_split.getHeight() -          // size for palette view
-              palette_view.getPreferredSize().height -
+              palette_view_.getPreferredSize().height -
               2 * palette_split.getDividerSize();
       if (location < min) { palette_split.setDividerLocation(min); }
     });
@@ -137,15 +147,28 @@ public final class MainWindow extends JFrame {
     pack();
   }
   
-  /**
-   * Handles the event for when the user wants to exit the program.
-   * 
-   * @param event 
-   */
   private void ExitAction(ActionEvent event) {
     System.exit(0);
   }
   
+  private void PaletteUndoAction(ActionEvent event) {
+    if (palette_controller_.canUndo()) {
+      palette_controller_.undo();
+      palette_view_.repaint();  // repaint the palette since it may have changed
+    }
+  }
+  
+  private void PaletteRedoAction(ActionEvent event) {
+    if (palette_controller_.canRedo()) {
+      palette_controller_.redo();
+      palette_view_.repaint();  // repaint the palette since it may have changed
+    }
+  }
+  
   private final PaletteController palette_controller_;
   private final TilesetController tileset_controller_;
+  
+  private final PaletteView palette_view_;
+  private final TilesetView tileset_view_;
+  private final CanvasView canvas_view_;
 }
