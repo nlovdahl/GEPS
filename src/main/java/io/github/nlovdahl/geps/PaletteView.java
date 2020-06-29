@@ -50,6 +50,10 @@ public final class PaletteView extends JTable {
         // if it is a right-click (button 3) or control is pressed
         if (event.getButton() == MouseEvent.BUTTON3 || event.isControlDown()) {
           chooseColor(event.getPoint());
+        // else, if it is a left (button 1) double-click
+        } else if (event.getButton() == MouseEvent.BUTTON1 &&
+                   event.getClickCount() == 2) {
+          changeSelection(event.getPoint());
         }
       }
       // do nothing for other situations
@@ -75,7 +79,7 @@ public final class PaletteView extends JTable {
   /**
    * Takes a point and allows the user to choose a different color for the cell
    * at that point. This corresponds to changing the color entry in the palette.
-   * After this, the table is repainted to reflect this change.
+   * After this, the altered cell is repainted to reflect this change.
    * 
    * @param point the selected point which should correspond to the cell / color
    *              entry being chosen.
@@ -94,6 +98,20 @@ public final class PaletteView extends JTable {
       palette_controller_.setColor(index, chosen_color);
       repaint(getCellRect(row, column, true));  // only repaint the one cell
     }
+  }
+  
+  /**
+   * Takes a point and changes the selection from the palette to include the
+   * cell at that point. After this, the entire table is repainted to reflect
+   * the change (even if there isn't any).
+   * 
+   * @param point the selected point which should correspond to the cell / color
+   *              entry being chosen.
+   */
+  private void changeSelection(Point point) {
+    int index = 16 * rowAtPoint(point) + columnAtPoint(point);
+    palette_controller_.setSelection(index);
+    repaint();  // repaint the entire table
   }
   
   // control how the cells in the table are shown

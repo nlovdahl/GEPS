@@ -100,15 +100,13 @@ public final class PaletteController {
   public void setBPP(int bpp) {
     if (bpp < MIN_BPP) {
       throw new IllegalArgumentException(
-        "Cannot create palette controller with less than " +
-        Integer.toString(MIN_BPP) + " bpp.");
+        "Cannot set bpp to value less than " + Integer.toString(MIN_BPP) + ".");
     } else if (bpp > MAX_BPP) {
       throw new IllegalArgumentException(
-        "Cannot create palette controller with more than " +
-        Integer.toString(MAX_BPP) + " bpp.");
-    } else {
-      bpp_ = bpp;
-    }
+        "Cannot set bpp to value more than " + Integer.toString(MAX_BPP) + ".");
+    }  // else, we have a legal bpp value
+    
+    bpp_ = bpp;
   }
   
   /**
@@ -129,6 +127,29 @@ public final class PaletteController {
    */
   public int getSelectionEndIndex() {
     return selection_start_index_ + (1 << bpp_) - 1;
+  }
+  
+  /**
+   * Sets the selection of colors in the palette so that it will include the
+   * given index. This does not necessarily set the selection start index to the
+   * given index; the size and starting index of the selection is also decided
+   * by the number of bits per pixel being used.
+   * 
+   * @param index the index which should be included by the selection.
+   * @throws IllegalArgumentException if index is less than 0 or more than
+   *                                  {@link Palette#PALETTE_MAX_SIZE}.
+   */
+  public void setSelection(int index) {
+    if (index < 0) {
+      throw new IllegalArgumentException(
+        "Cannot set selection to include index less than 0.");
+    } else if (index >= Palette.PALETTE_MAX_SIZE) {
+      throw new IllegalArgumentException(
+        "Cannot set selection to include index greater than or equal to " +
+        Palette.PALETTE_MAX_SIZE + ".");
+    }  // else, we have a legal index
+    
+    selection_start_index_ = index - (index % (1 << bpp_));
   }
   
   /**
