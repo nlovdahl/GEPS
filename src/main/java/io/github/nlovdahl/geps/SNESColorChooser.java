@@ -154,19 +154,21 @@ public final class SNESColorChooser extends JDialog {
   
   // change the text and background corresponding the the new color
   private void setNewColorLabel(Color color) {
+    Color clamped_color = Palette.clampColor(color);
     new_color_label_.setText("New Color: " +
-                             Palette.getSNESColorCodeString(color));
-    new_color_label_.setBackground(color);
-    new_color_label_.setForeground(Palette.contrastColor(color));
+                             Palette.getSNESColorCodeString(clamped_color));
+    new_color_label_.setBackground(clamped_color);
+    new_color_label_.setForeground(Palette.contrastColor(clamped_color));
     pack();  // dialog may need to be resized
   }
   
   // change the text and background corresponding to the initial color
   private void setInitialColorLabel(Color color) {
+    Color clamped_color = Palette.clampColor(color);
     initial_color_label_.setText("Old Color: " +
-                                 Palette.getSNESColorCodeString(color));
-    initial_color_label_.setBackground(color);
-    initial_color_label_.setForeground(Palette.contrastColor(color));
+                                 Palette.getSNESColorCodeString(clamped_color));
+    initial_color_label_.setBackground(clamped_color);
+    initial_color_label_.setForeground(Palette.contrastColor(clamped_color));
     pack();  // dialog may need to be resized
   }
   
