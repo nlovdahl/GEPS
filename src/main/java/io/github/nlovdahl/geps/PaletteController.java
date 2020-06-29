@@ -29,10 +29,13 @@ import java.util.LinkedList;
  * @see PaletteView
  */
 public final class PaletteController {
-  public PaletteController() {
+  public PaletteController(int bpp) {
+    setBPP(bpp);  // try to set the BPP (it might fail for bpp < MIN, > MAX)
+    selection_start_index_ = 0;
+    
     current_palette_ = new Palette();
-    undo_states_ = new LinkedList<Palette>();
-    redo_states_ = new LinkedList<Palette>();
+    undo_states_ = new LinkedList<>();
+    redo_states_ = new LinkedList<>();
   }
   
   /**
@@ -59,7 +62,7 @@ public final class PaletteController {
     saveForUndo();
     redo_states_.clear();
     
-    current_palette_.setColor(index, r, g, b);
+    current_palette_.setColor(index, r, g, b);  // should be clamped in Palette
   }
   
   /**
@@ -75,7 +78,70 @@ public final class PaletteController {
     saveForUndo();
     redo_states_.clear();
     
-    current_palette_.setColor(index, color);
+    current_palette_.setColor(index, color);  // should be clamped in Palette
+  }
+  
+  /**
+   * Returns the number of bits per pixel being used.
+   * 
+   * @return the number of bits per pixel.
+   */
+  public int getBPP() { return bpp_; }
+  
+  /**
+   * Sets the palette controller to use the specified number of bits per pixel.
+   * This is used in determining the color selection (how many color can be
+   * selected). This is limited between {@link #MIN_BPP} and {@link #MAX_BPP}.
+   * 
+   * @param bpp the number of bits per pixel to be set to.
+   * @throws IllegalArgumentException if bpp is less than {@link #MIN_BPP} or
+   *                                  more than {@link #MAX_BPP}.
+   */
+  public void setBPP(int bpp) {
+    if (bpp < MIN_BPP) {
+      throw new IllegalArgumentException(
+        "Cannot create palette controller with less than " +
+        Integer.toString(MIN_BPP) + " bpp.");
+    } else if (bpp > MAX_BPP) {
+      throw new IllegalArgumentException(
+        "Cannot create palette controller with more than " +
+        Integer.toString(MAX_BPP) + " bpp.");
+    } else {
+      bpp_ = bpp;
+    }
+  }
+  
+  /**
+   * Returns the index marking the start of the currently selected colors in the
+   * palette. This will be the index of the first color in the selection, not
+   * the index before the selection.
+   * 
+   * @return the index marking the start of the selected colors.
+   */
+  public int getSelectionStartIndex() { return selection_start_index_; }
+  
+  /**
+   * Returns the index marking the end of the currently selected colors in the
+   * palette. This will be the index of the last color in the selection, not the
+   * index after the selection.
+   * 
+   * @return the index marking the end of the selected colors.
+   */
+  public int getSelectionEndIndex() {
+    return selection_start_index_ + (1 << bpp_) - 1;
+  }
+  
+  /**
+   * Takes an index for an entry in the palette and returns whether or not that
+   * index is within the current selection of colors in the palette.
+   * 
+   * @param index the index to check against the current selection.
+   * @return true if the index is in the currently selected colors in the
+   *         palette and false otherwise.
+   */
+  public boolean isIndexInSelection(int index) {
+    return (index >= getSelectionStartIndex()) &&
+           (index <= getSelectionEndIndex());
   }
   
   /**
@@ -160,10 +226,17 @@ public final class PaletteController {
     undo_states_.addFirst(new Palette(current_palette_));
   }
   
+  /** The minimum number of bits per pixel. */
+  public static final int MIN_BPP = 1;
+  /** The maximum number of bits per pixel. */
+  public static final int MAX_BPP = 8;
   /** The maximum number of states that will be recorded to be undone. */
   public static final int MAX_UNDOS = 30;
   /** The maximum number of states that will be recorded to be redone. */
   public static final int MAX_REDOS = 30;
+  
+  private int bpp_;
+  private int selection_start_index_;
   
   private Palette current_palette_;
   private final Deque<Palette> undo_states_;

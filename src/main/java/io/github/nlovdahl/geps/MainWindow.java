@@ -49,11 +49,10 @@ public final class MainWindow extends JFrame {
   public MainWindow() {
     super("GEPS");
     
-    palette_controller_ = new PaletteController();
+    palette_controller_ = new PaletteController(4);
     tileset_controller_ = new TilesetController();
     
-    palette_view_ = new PaletteView(this, palette_controller_,
-                                    tileset_controller_.getBPP());
+    palette_view_ = new PaletteView(this, palette_controller_);
     tileset_view_ = new TilesetView(tileset_controller_);
     canvas_view_ = new CanvasView(tileset_controller_);
     

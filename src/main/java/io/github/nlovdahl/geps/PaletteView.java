@@ -19,7 +19,9 @@ import javax.swing.JTable;
 import javax.swing.JLabel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.JFrame;
+import javax.swing.BorderFactory;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Component;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseEvent;
@@ -31,8 +33,8 @@ import java.awt.Point;
  * @author Nicholas Lovdahl
  */
 public final class PaletteView extends JTable {
-  public PaletteView(JFrame parent_frame, PaletteController palette_controller,
-                     int bpp) {
+  public PaletteView(JFrame parent_frame,
+                     PaletteController palette_controller) {
     super(16, 16);  // create a table with 16 rows / 16 columns
     setRowSelectionAllowed(false);
     setColumnSelectionAllowed(false);
@@ -60,29 +62,10 @@ public final class PaletteView extends JTable {
     if (palette_controller == null) {
       throw new NullPointerException(
         "Cannot create PaletteView with null PaletteController.");
-    } else if (bpp < 1) {
-      throw new IllegalArgumentException(
-        "Cannot create PaletteView with less than 1 bit per pixel.");
-    } else if (bpp > 8) {
-      throw new IllegalArgumentException(
-        "Cannot create PaletteView with more than 8 bits per pixel.");
     }  // else, our parameters are valid and we can proceed
     
     palette_controller_ = palette_controller;
     color_chooser_ = new SNESColorChooser(parent_frame);
-    bpp_ = bpp;
-  }
-  
-  public void setBPP(int bpp) {
-    if (bpp < 1) {
-      throw new IllegalArgumentException(
-        "Cannot create PaletteView with less than 1 bit per pixel.");
-    } else if (bpp > 8) {
-      throw new IllegalArgumentException(
-        "Cannot create PaletteView with more than 8 bits per pixel.");
-    }  // else, our parameters are valid and we can proceed
-    
-    bpp_ = bpp;
   }
   
   // disallow the user from editing the cells in the table
@@ -121,20 +104,52 @@ public final class PaletteView extends JTable {
         int row, int column) {
       JLabel cell = (JLabel) super.getTableCellRendererComponent(
           table, value, is_selected, has_focus, row, column);
-      // retirve the corresponding color from the palette controller
-      Color cell_color = palette_controller_.getColor(row * 16 + column);
+      // retrieve the corresponding color from the palette controller
+      int index = row * 16 + column;
+      Color cell_color = palette_controller_.getColor(index);
+      Color contrast_color = Palette.contrastColor(cell_color);
       
       // the corresponding palette entry decides the appearance of the cell
       cell.setBackground(cell_color);
-      cell.setForeground(Palette.contrastColor(cell_color));
+      cell.setForeground(contrast_color);
       cell.setHorizontalAlignment(JLabel.CENTER);
       cell.setText(Palette.getSNESColorCodeString(cell_color));
       
+      // whether there is a border is decided by the selection and position
+      if (palette_controller_.isIndexInSelection(index)) {
+        int top, left, bottom, right;
+        // set the size of each part of the border...
+        if (row == 0 || palette_controller_.isIndexInSelection(index - 16)) {
+          top = 0;
+        } else {
+          top = THICK_BORDER_SIZE;
+        }
+        if (column == 0 || palette_controller_.isIndexInSelection(index - 1)) {
+          left = 0;
+        } else {
+          left = THICK_BORDER_SIZE;
+        }
+        if (row == 15 || palette_controller_.isIndexInSelection(index + 16)) {
+          bottom = 0;
+        } else {
+          bottom = THICK_BORDER_SIZE;
+        }
+        if (column == 15 || palette_controller_.isIndexInSelection(index + 1)) {
+          right = 0;
+        } else {
+          right = THICK_BORDER_SIZE;
+        }
+        // draw a border between selected and non-selected, except on the edges
+        cell.setBorder(BorderFactory.createMatteBorder(top, left, bottom, right,
+                                                       contrast_color));
+      }
+      
       return cell;
     }
+    
+    private static final int THICK_BORDER_SIZE = 2;
   }
   
   private final PaletteController palette_controller_;
   private final SNESColorChooser color_chooser_;
-  private int bpp_;
 }
