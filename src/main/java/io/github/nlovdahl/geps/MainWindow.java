@@ -22,6 +22,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
+import javax.swing.JRadioButtonMenuItem;
+import javax.swing.ButtonGroup;
 import javax.swing.JSeparator;
 import javax.swing.WindowConstants;
 import javax.swing.UIManager;
@@ -108,8 +110,35 @@ public final class MainWindow extends JFrame {
     palette_redo_item.addActionListener(this::PaletteRedoAction);
     edit_menu.add(palette_redo_item);
     
+    JMenu format_menu = new JMenu("Format");  // format menu initialization...
+    JMenu bpp_submenu = new JMenu("Bits per Pixel");
+    ButtonGroup bpp_item_group = new ButtonGroup();
+    JRadioButtonMenuItem one_bpp_item = new JRadioButtonMenuItem("1 BPP");
+    bpp_submenu.add(one_bpp_item);
+    bpp_item_group.add(one_bpp_item);
+    one_bpp_item.addActionListener(this::BPPChangeAction);
+    JRadioButtonMenuItem two_bpp_item = new JRadioButtonMenuItem("2 BPP");
+    bpp_submenu.add(two_bpp_item);
+    bpp_item_group.add(two_bpp_item);
+    two_bpp_item.addActionListener(this::BPPChangeAction);
+    JRadioButtonMenuItem three_bpp_item = new JRadioButtonMenuItem("3 BPP");
+    bpp_submenu.add(three_bpp_item);
+    bpp_item_group.add(three_bpp_item);
+    three_bpp_item.addActionListener(this::BPPChangeAction);
+    JRadioButtonMenuItem four_bpp_item = new JRadioButtonMenuItem("4 BPP");
+    bpp_submenu.add(four_bpp_item);
+    bpp_item_group.add(four_bpp_item);
+    four_bpp_item.addActionListener(this::BPPChangeAction);
+    JRadioButtonMenuItem eight_bpp_item = new JRadioButtonMenuItem("8 BPP");
+    bpp_submenu.add(eight_bpp_item);
+    bpp_item_group.add(eight_bpp_item);
+    eight_bpp_item.addActionListener(this::BPPChangeAction);
+    four_bpp_item.setSelected(true);  // begin with 4 bpp by default
+    format_menu.add(bpp_submenu);
+    
     menu_bar.add(file_menu);
     menu_bar.add(edit_menu);
+    menu_bar.add(format_menu);
     setJMenuBar(menu_bar);
     
     // initialize the views for the tileset, canvas, and palette
@@ -160,6 +189,16 @@ public final class MainWindow extends JFrame {
   private void PaletteRedoAction(ActionEvent event) {
     if (palette_controller_.canRedo()) {
       palette_controller_.redo();
+      palette_view_.repaint();  // repaint the palette since it may have changed
+    }
+  }
+  
+  private void BPPChangeAction(ActionEvent event) {
+    // split and parse the first part of the command, which should be the number
+    int bpp = Integer.parseInt(event.getActionCommand().split(" ")[0]);
+    // proceed only if the bpp is within a tolerable range
+    if (bpp >= PaletteController.MIN_BPP && bpp <= PaletteController.MAX_BPP) {
+      palette_controller_.setBPP(bpp);
       palette_view_.repaint();  // repaint the palette since it may have changed
     }
   }

@@ -92,6 +92,8 @@ public final class PaletteController {
    * Sets the palette controller to use the specified number of bits per pixel.
    * This is used in determining the color selection (how many color can be
    * selected). This is limited between {@link #MIN_BPP} and {@link #MAX_BPP}.
+   * This will also update the starting index of the current selection of colors
+   * in the palette, since this may change.
    * 
    * @param bpp the number of bits per pixel to be set to.
    * @throws IllegalArgumentException if bpp is less than {@link #MIN_BPP} or
@@ -107,6 +109,8 @@ public final class PaletteController {
     }  // else, we have a legal bpp value
     
     bpp_ = bpp;
+    // changing the bpp could change where the starting index should be
+    setSelection(selection_start_index_);
   }
   
   /**
