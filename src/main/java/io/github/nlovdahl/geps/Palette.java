@@ -18,9 +18,10 @@ package io.github.nlovdahl.geps;
 import java.awt.Color;
 
 /**
- * The data model for a palette. A palette is composed of a 256 color entries
- * which can be used by a {@link Tileset} to determine what colors that tileset
- * should have.
+ * The data model for a palette. A palette is composed of an explicit number of
+ * color entries which can be used by a {@link Tileset} to determine what colors
+ * that tileset should have. Together, a tileset and a palette could be used to
+ * form an image.
  * 
  * @author Nicholas Lovdahl
  * 
@@ -28,7 +29,7 @@ import java.awt.Color;
  * @see PaletteView
  */
 public final class Palette {
-  /** Creates a new palette with default colors as its entries. */
+  /** Creates a palette with a default selection of colors as its entries. */
   public Palette() {
     colors_ = new Color[PALETTE_MAX_SIZE];
     for (int index = 0; index < PALETTE_MAX_SIZE; index++) {
