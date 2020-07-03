@@ -52,7 +52,7 @@ public final class MainWindow extends JFrame {
     super("GEPS");
     
     palette_controller_ = new PaletteController(4);
-    tileset_controller_ = new TilesetController();
+    tileset_controller_ = new TilesetController(palette_controller_);
     
     palette_view_ = new PaletteView(this, palette_controller_);
     tileset_view_ = new TilesetView(tileset_controller_);
@@ -148,7 +148,7 @@ public final class MainWindow extends JFrame {
     
     // create the split panes that contain the views
     JSplitPane tileset_split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
-                                              canvas_scroll, tileset_scroll);
+                                              tileset_scroll, canvas_scroll);
     tileset_split.setResizeWeight(0.2);
     tileset_split.setContinuousLayout(true);
     
