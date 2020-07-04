@@ -48,6 +48,10 @@ public final class TilesetController {
     redo_states_ = new LinkedList<>();
   }
   
+  public int getTilesetWidth() { return tileset_width_; }
+  
+  public int getTilesetHeight() { return tileset_height_; }
+  
   /**
    * Gets the index for a color in the palette from a pixel in the tileset.
    * The given coordinates are based from (0, 0) at the top-right and correspond
@@ -62,7 +66,8 @@ public final class TilesetController {
    *         coordinates do not correspond to a pixel.
    */
   public int getPixelIndex(int x, int y) {
-    if (x < 0 || y < 0 || x >= tileset_width_ || y >= tileset_height_) {
+    if (x < 0 || y < 0 || x >= tileset_width_ * Tileset.TILE_WIDTH ||
+        y >= tileset_height_ * Tileset.TILE_HEIGHT) {
       return -1;  // return -1 if outside of the (imaginary) bounding rectangle
     }
     // determine the tile and the insets into that tile
@@ -93,7 +98,8 @@ public final class TilesetController {
    */
   public void setPixelIndex(int x, int y, int index) {
     // check that the coordinates, tile, and index are valid, respectively
-    if (x < 0 || y < 0 || x >= tileset_width_ || y >= tileset_height_) {
+    if (x < 0 || y < 0 || x >= tileset_width_ * Tileset.TILE_WIDTH ||
+        y >= tileset_height_ * Tileset.TILE_HEIGHT) {
       throw new IllegalArgumentException(
         "Cannot set index for coordinates (" + Integer.toString(x) + ", " +
         Integer.toString(y) + ").");
