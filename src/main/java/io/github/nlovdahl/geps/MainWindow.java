@@ -50,37 +50,6 @@ public final class MainWindow extends JFrame {
    */
   public MainWindow() {
     super("GEPS");
-    
-    palette_controller_ = new PaletteController(4);
-    tileset_controller_ = new TilesetController(palette_controller_);
-    
-    palette_view_ = new PaletteView(this, palette_controller_);
-    tileset_view_ = new TilesetView(tileset_controller_);
-    canvas_view_ = new CanvasView(tileset_controller_);
-    
-    InitMainWindow();
-  }
-  
-  /**
-   * Creates an instance of MainWindow and begins a thread to handle event
-   * dispatches. Prior to the creation of the window, this method will attempt
-   * to set the look and feel of the UI to match the system. The user is
-   * notified if this cannot be done.
-   */
-  public static void Run() {
-    try {  // try to set the look and feel to match the system's
-      UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-    } catch (ClassNotFoundException | IllegalAccessException |
-             InstantiationException | UnsupportedLookAndFeelException e) {
-      JOptionPane.showMessageDialog(null,
-        "Failed to set system look and feel. Using default look and feel.\n" +
-        e.getClass().getCanonicalName());  // give the name of the exception
-    }
-    
-    new MainWindow().setVisible(true);
-  }
-  
-  private void InitMainWindow() {
     // set properties for the frame / main window itself
     setLocationByPlatform(true);
     
@@ -93,6 +62,14 @@ public final class MainWindow extends JFrame {
         ExitAction(e);
       }
     });
+    
+    // initialize the controllers and views
+    palette_controller_ = new PaletteController(4);  // start with 4 BPP
+    tileset_controller_ = new TilesetController(palette_controller_);
+    
+    palette_view_ = new PaletteView(this, palette_controller_);
+    tileset_view_ = new TilesetView(tileset_controller_);
+    canvas_view_ = new CanvasView(tileset_controller_);
     
     // initialize the menu bar
     JMenuBar menu_bar = new JMenuBar();
@@ -143,7 +120,7 @@ public final class MainWindow extends JFrame {
     menu_bar.add(format_menu);
     setJMenuBar(menu_bar);
     
-    // initialize the views for the tileset, canvas, and palette
+    // setup the scroll panes for the tileset, canvas, and palette
     JScrollPane tileset_scroll = new JScrollPane(tileset_view_);
     JScrollPane canvas_scroll = new JScrollPane(canvas_view_);
     JScrollPane palette_scroll = new JScrollPane(palette_view_);
@@ -181,6 +158,25 @@ public final class MainWindow extends JFrame {
                                             (this::PaletteStateChange));
     palette_view_.addPropertyChangeListener(PaletteView.NEW_PALETTE_SELECTION,
                                             (this::PaletteSelectionChange));
+  }
+  
+  /**
+   * Creates an instance of MainWindow and begins a thread to handle event
+   * dispatches. Prior to the creation of the window, this method will attempt
+   * to set the look and feel of the UI to match the system. The user is
+   * notified if this cannot be done.
+   */
+  public static void Run() {
+    try {  // try to set the look and feel to match the system's
+      UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+    } catch (ClassNotFoundException | IllegalAccessException |
+             InstantiationException | UnsupportedLookAndFeelException e) {
+      JOptionPane.showMessageDialog(null,
+        "Failed to set system look and feel. Using default look and feel.\n" +
+        e.getClass().getCanonicalName());  // give the name of the exception
+    }
+    
+    new MainWindow().setVisible(true);
   }
   
   // methods to handle actions and property change events
@@ -230,8 +226,8 @@ public final class MainWindow extends JFrame {
   }
   
   // parts of the UI that need to be accessible to be updated dynamically
-  private JMenuItem palette_undo_menu_item_;
-  private JMenuItem palette_redo_menu_item_;
+  private final JMenuItem palette_undo_menu_item_;
+  private final JMenuItem palette_redo_menu_item_;
   
   // controllers and views
   private final PaletteController palette_controller_;
