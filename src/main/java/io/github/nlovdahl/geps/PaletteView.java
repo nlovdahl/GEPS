@@ -88,13 +88,14 @@ public final class PaletteView extends JTable {
     int row = rowAtPoint(point);
     int column = columnAtPoint(point);
     int chosen_index = 16 * row + column;
-    Color chosen_color = palette_controller_.getColor(chosen_index);
+    Color old_color = palette_controller_.getColor(chosen_index);
     // allow the user to select a color, starting with the current color
-    chosen_color = color_chooser_.chooseColor(chosen_color);
+    Color new_color = color_chooser_.chooseColor(old_color);
     
-    if (chosen_color != null) {  // if the user made a choice (not null)
+    // if the user made a choice (not null) and it is different from the old one
+    if (new_color != null && old_color.getRGB() != new_color.getRGB()) {
       // update the palette controller and repaint the appropriate cell
-      palette_controller_.setColor(chosen_index, chosen_color);
+      palette_controller_.setColor(chosen_index, new_color);
       repaint(getCellRect(row, column, true));  // only repaint the one cell
       
       // record that the state of the palette will have changed
