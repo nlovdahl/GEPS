@@ -103,12 +103,14 @@ public final class MainWindow extends JFrame {
     file_menu.add(exit_menu_item);
     
     JMenu edit_menu = new JMenu("Edit");  // edit menu initialization...
-    JMenuItem palette_undo_item = new JMenuItem("Undo Palette");
-    palette_undo_item.addActionListener(this::PaletteUndoAction);
-    edit_menu.add(palette_undo_item);
-    JMenuItem palette_redo_item = new JMenuItem("Redo Palette");
-    palette_redo_item.addActionListener(this::PaletteRedoAction);
-    edit_menu.add(palette_redo_item);
+    palette_undo_menu_item_ = new JMenuItem("Undo Palette");
+    palette_undo_menu_item_.setEnabled(palette_controller_.canUndo());
+    palette_undo_menu_item_.addActionListener(this::PaletteUndoAction);
+    edit_menu.add(palette_undo_menu_item_);
+    palette_redo_menu_item_ = new JMenuItem("Redo Palette");
+    palette_redo_menu_item_.setEnabled(palette_controller_.canRedo());
+    palette_redo_menu_item_.addActionListener(this::PaletteRedoAction);
+    edit_menu.add(palette_redo_menu_item_);
     
     JMenu format_menu = new JMenu("Format");  // format menu initialization...
     JMenu bpp_submenu = new JMenu("Bits per Pixel");
@@ -173,8 +175,15 @@ public final class MainWindow extends JFrame {
     pane.add(palette_split, BorderLayout.CENTER);
     
     pack();
+    
+    // setup property change listeners that need to interact with the UI
+    palette_view_.addPropertyChangeListener(PaletteView.NEW_PALETTE_STATE,
+                                            (this::PaletteStateChange));
+    palette_view_.addPropertyChangeListener(PaletteView.NEW_PALETTE_SELECTION,
+                                            (this::PaletteSelectionChange));
   }
   
+  // methods to handle actions and property change events
   private void ExitAction(ActionEvent event) {
     System.exit(0);
   }
@@ -183,6 +192,7 @@ public final class MainWindow extends JFrame {
     if (palette_controller_.canUndo()) {
       palette_controller_.undo();
       palette_view_.repaint();  // repaint the palette since it may have changed
+      updatePaletteUndoRedoUI();
     }
   }
   
@@ -190,6 +200,7 @@ public final class MainWindow extends JFrame {
     if (palette_controller_.canRedo()) {
       palette_controller_.redo();
       palette_view_.repaint();  // repaint the palette since it may have changed
+      updatePaletteUndoRedoUI();
     }
   }
   
@@ -203,6 +214,26 @@ public final class MainWindow extends JFrame {
     }
   }
   
+  private void PaletteStateChange(PropertyChangeEvent event) {
+    updatePaletteUndoRedoUI();
+  }
+  
+  private void PaletteSelectionChange(PropertyChangeEvent event) {
+    canvas_view_.repaint();
+    tileset_view_.repaint();
+  }
+  
+  // methods to dynamically update the UI
+  private void updatePaletteUndoRedoUI() {
+    palette_undo_menu_item_.setEnabled(palette_controller_.canUndo());
+    palette_redo_menu_item_.setEnabled(palette_controller_.canRedo());
+  }
+  
+  // parts of the UI that need to be accessible to be updated dynamically
+  private JMenuItem palette_undo_menu_item_;
+  private JMenuItem palette_redo_menu_item_;
+  
+  // controllers and views
   private final PaletteController palette_controller_;
   private final TilesetController tileset_controller_;
   

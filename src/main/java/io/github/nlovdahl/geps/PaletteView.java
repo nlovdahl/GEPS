@@ -21,7 +21,6 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.JFrame;
 import javax.swing.BorderFactory;
 import java.awt.Color;
-import java.awt.Font;
 import java.awt.Component;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseEvent;
@@ -88,15 +87,24 @@ public final class PaletteView extends JTable {
     // get the current color
     int row = rowAtPoint(point);
     int column = columnAtPoint(point);
-    int index = 16 * row + column;
-    Color chosen_color = palette_controller_.getColor(index);
+    int chosen_index = 16 * row + column;
+    Color chosen_color = palette_controller_.getColor(chosen_index);
     // allow the user to select a color, starting with the current color
     chosen_color = color_chooser_.chooseColor(chosen_color);
     
     if (chosen_color != null) {  // if the user made a choice (not null)
       // update the palette controller and repaint the appropriate cell
-      palette_controller_.setColor(index, chosen_color);
+      palette_controller_.setColor(chosen_index, chosen_color);
       repaint(getCellRect(row, column, true));  // only repaint the one cell
+      
+      // record that the state of the palette will have changed
+      firePropertyChange(NEW_PALETTE_STATE, null, null);
+      // if the change was within the selection, record that too
+      if (palette_controller_.isIndexInSelection(chosen_index)) {
+        int selection_index = palette_controller_.getSelectionStartIndex();
+        firePropertyChange(NEW_PALETTE_SELECTION, selection_index,
+                           selection_index);
+      }
     }
   }
   
@@ -109,9 +117,14 @@ public final class PaletteView extends JTable {
    *              entry being chosen.
    */
   private void changeSelection(Point point) {
-    int index = 16 * rowAtPoint(point) + columnAtPoint(point);
-    palette_controller_.setSelection(index);
-    repaint();  // repaint the entire table
+    int old_index = palette_controller_.getSelectionStartIndex();
+    int chosen_index = 16 * rowAtPoint(point) + columnAtPoint(point);
+    palette_controller_.setSelection(chosen_index);
+    int new_index = palette_controller_.getSelectionStartIndex();
+    
+    // repaint the entire table and record the selection change
+    repaint();
+    firePropertyChange(NEW_PALETTE_SELECTION, old_index, new_index);
   }
   
   // control how the cells in the table are shown
@@ -167,6 +180,18 @@ public final class PaletteView extends JTable {
     
     private static final int THICK_BORDER_SIZE = 2;
   }
+  
+  /**
+   * The string for a property change event which denotes a change in the state
+   * of the palette.
+   */
+  public static final String NEW_PALETTE_STATE = "paletteStateUpdate";
+  /**
+   * The string for a property change event which denotes either a change in at
+   * least one of the colors in the current selection or a change in the
+   * selection itself.
+   */
+  public static final String NEW_PALETTE_SELECTION = "paletteSelectionUpdate";
   
   private final PaletteController palette_controller_;
   private final SNESColorChooser color_chooser_;

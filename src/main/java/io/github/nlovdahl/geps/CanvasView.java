@@ -72,7 +72,8 @@ public final class CanvasView extends JPanel {
       scaler, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
     canvas_image_ = scale_op.filter(base_image, canvas_image_);
     
-    setPreferredSize(new Dimension(canvas_image_.getWidth(), canvas_image_.getHeight()));
+    setPreferredSize(new Dimension(canvas_image_.getWidth(),
+                                   canvas_image_.getHeight()));
   }
   
   private double canvas_scale_factor_ = 4.0;

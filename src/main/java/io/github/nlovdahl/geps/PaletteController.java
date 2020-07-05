@@ -43,10 +43,23 @@ public final class PaletteController {
    * controller. This method is a wrapper for the {@link Palette#getColor(int)}
    * method.
    * 
-   * @param index the index in the palette of the color to return. 
+   * @param index the index of the color in the palette to return. 
    * @return the color in the specified index in the palette.
    */
   public Color getColor(int index) { return current_palette_.getColor(index); }
+  
+  /**
+   * Returns the color in the specified index in the current selection of the
+   * palette controller. This method is essentially a wrapper for the
+   * {@link Palette#getColor(int)} method, except that it uses an index relative
+   * to the current selection.
+   * 
+   * @param index the index of the color in the selection to return.
+   * @return the color in the specified index in the palette.
+   */
+  public Color getSelectionColor(int index) {
+    return current_palette_.getColor(getSelectionStartIndex() + index);
+  }
   
   /**
    * Sets the color for a specified index in the palette based on the given RGB

@@ -126,7 +126,7 @@ public final class TilesetController {
   public Color getPixelColor(int x, int y) {
     int pixel_index = getPixelIndex(x, y);
     if (pixel_index >= 0) {
-      return palette_controller_.getColor(pixel_index);
+      return palette_controller_.getSelectionColor(pixel_index);
     } else {
       return null;
     }
