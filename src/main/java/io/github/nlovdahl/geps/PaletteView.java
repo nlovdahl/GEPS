@@ -102,8 +102,8 @@ public final class PaletteView extends JTable {
       // if the change was within the selection, record that too
       if (palette_controller_.isIndexInSelection(chosen_index)) {
         int selection_index = palette_controller_.getSelectionStartIndex();
-        firePropertyChange(NEW_PALETTE_SELECTION, selection_index,
-                           selection_index);
+        // use null to represent no new selection (new contents only)
+        firePropertyChange(NEW_PALETTE_SELECTION, selection_index, null);
       }
     }
   }
