@@ -16,6 +16,9 @@ GEPS. If not, see <https://www.gnu.org/licenses/>. */
 package io.github.nlovdahl.geps;
 
 import javax.swing.JPanel;
+import javax.swing.Scrollable;
+import javax.swing.SwingConstants;
+import java.awt.Rectangle;
 import java.awt.Graphics;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -31,7 +34,7 @@ import java.awt.image.AffineTransformOp;
  * 
  * @see TilesetView
  */
-public final class CanvasView extends JPanel {
+public final class CanvasView extends JPanel implements Scrollable {
   public CanvasView(TilesetController tileset_controller) {
     if (tileset_controller == null) {
       throw new NullPointerException(
@@ -74,6 +77,33 @@ public final class CanvasView extends JPanel {
     graphics.drawImage(canvas_image_, 0, 0, null);
   }
   
+  @Override
+  public Dimension getPreferredScrollableViewportSize() {
+    return canvas_image_size_;
+  }
+  
+  @Override
+  public int getScrollableBlockIncrement(Rectangle visibleRect,
+                                         int orientation, int direction) {
+    if (orientation == SwingConstants.VERTICAL) {
+      return (int) canvas_scale_factor_ * Tileset.TILE_HEIGHT;
+    } else {  // else, the orientation must be horizontal
+      return (int) canvas_scale_factor_ * Tileset.TILE_WIDTH;
+    }
+  }
+  
+  @Override
+  public boolean getScrollableTracksViewportHeight() { return false; }
+  
+  @Override
+  public boolean getScrollableTracksViewportWidth() { return false; }
+  
+  @Override
+  public int getScrollableUnitIncrement(Rectangle visibleRect,
+                                        int orientation, int direction) {
+    return (int) canvas_scale_factor_;
+  }
+  
   private void redrawCanvasImage() {
     BufferedImage base_image = new BufferedImage(
       tileset_controller_.getTilesetWidth() * Tileset.TILE_WIDTH,
@@ -95,14 +125,17 @@ public final class CanvasView extends JPanel {
     scaler.scale(canvas_scale_factor_, canvas_scale_factor_);
     AffineTransformOp scale_op = new AffineTransformOp(
       scaler, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
-    canvas_image_ = scale_op.filter(base_image, null);
     
-    setPreferredSize(new Dimension(canvas_image_.getWidth(),
-                                   canvas_image_.getHeight()));
+    canvas_image_ = scale_op.filter(base_image, null);
+    canvas_image_size_ = new Dimension(canvas_image_.getWidth(),
+                                       canvas_image_.getHeight());
+    setPreferredSize(canvas_image_size_);
+    revalidate();  // the new area will be 'dirty', repaint it all
   }
   
   private double canvas_scale_factor_;
   private BufferedImage canvas_image_;
+  private Dimension canvas_image_size_;
   
   private final TilesetController tileset_controller_;
 }
