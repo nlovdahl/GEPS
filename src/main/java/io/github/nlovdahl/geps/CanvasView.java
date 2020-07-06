@@ -38,7 +38,32 @@ public final class CanvasView extends JPanel {
         "Cannot create canvas view with null tileset controller.");
     }  // else, we should have a good palette controller to pair with
     tileset_controller_ = tileset_controller;
+    
+    canvas_scale_factor_ = 4.0;
     redrawCanvasImage();
+  }
+  
+  /**
+   * Gets the scaling factor for the canvas.
+   * 
+   * @return the factor for the canvas.
+   */
+  public double getScaleFactor() { return canvas_scale_factor_; }
+  
+  /**
+   * Sets the scaling factor for the canvas to the given value.
+   * 
+   * @param scale_factor the new factor to scale the canvas by.
+   * @throws IllegalArgumentException if the new factor is less than or equal to
+   *         zero.
+   */
+  public void setScaleFactor(double scale_factor) {
+    if (scale_factor <= 0) {
+      throw new IllegalArgumentException(
+        "Scale factor must be greater than zero.");
+    }  // else, the scale factor should be valud
+    
+    canvas_scale_factor_ = scale_factor;
   }
   
   @Override
@@ -70,13 +95,13 @@ public final class CanvasView extends JPanel {
     scaler.scale(canvas_scale_factor_, canvas_scale_factor_);
     AffineTransformOp scale_op = new AffineTransformOp(
       scaler, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
-    canvas_image_ = scale_op.filter(base_image, canvas_image_);
+    canvas_image_ = scale_op.filter(base_image, null);
     
     setPreferredSize(new Dimension(canvas_image_.getWidth(),
                                    canvas_image_.getHeight()));
   }
   
-  private double canvas_scale_factor_ = 4.0;
+  private double canvas_scale_factor_;
   private BufferedImage canvas_image_;
   
   private final TilesetController tileset_controller_;

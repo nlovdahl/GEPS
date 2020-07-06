@@ -89,6 +89,29 @@ public final class MainWindow extends JFrame {
     palette_redo_menu_item_.addActionListener(this::PaletteRedoAction);
     edit_menu.add(palette_redo_menu_item_);
     
+    JMenu view_menu = new JMenu("View");  // view menu initialization...
+    JMenu canvas_zoom_submenu = new JMenu("Canvas Zoom");
+    ButtonGroup canvas_zoom_item_group = new ButtonGroup();
+    JRadioButtonMenuItem canvas_zoom_1_item = new JRadioButtonMenuItem("x1");
+    canvas_zoom_submenu.add(canvas_zoom_1_item);
+    canvas_zoom_item_group.add(canvas_zoom_1_item);
+    canvas_zoom_1_item.addActionListener(this::CanvasZoomChangeAction);
+    JRadioButtonMenuItem canvas_zoom_2_item = new JRadioButtonMenuItem("x2");
+    canvas_zoom_submenu.add(canvas_zoom_2_item);
+    canvas_zoom_item_group.add(canvas_zoom_2_item);
+    canvas_zoom_2_item.addActionListener(this::CanvasZoomChangeAction);
+    JRadioButtonMenuItem canvas_zoom_4_item = new JRadioButtonMenuItem("x4");
+    canvas_zoom_submenu.add(canvas_zoom_4_item);
+    canvas_zoom_item_group.add(canvas_zoom_4_item);
+    canvas_zoom_4_item.addActionListener(this::CanvasZoomChangeAction);
+    JRadioButtonMenuItem canvas_zoom_8_item = new JRadioButtonMenuItem("x8");
+    canvas_zoom_submenu.add(canvas_zoom_8_item);
+    canvas_zoom_item_group.add(canvas_zoom_8_item);
+    canvas_zoom_8_item.addActionListener(this::CanvasZoomChangeAction);
+    canvas_zoom_4_item.setSelected(true);  // begin with x4 zoom by default
+    view_menu.add(canvas_zoom_submenu);
+    
+    
     JMenu format_menu = new JMenu("Format");  // format menu initialization...
     JMenu bpp_submenu = new JMenu("Bits per Pixel");
     ButtonGroup bpp_item_group = new ButtonGroup();
@@ -117,6 +140,7 @@ public final class MainWindow extends JFrame {
     
     menu_bar.add(file_menu);
     menu_bar.add(edit_menu);
+    menu_bar.add(view_menu);
     menu_bar.add(format_menu);
     setJMenuBar(menu_bar);
     
@@ -198,6 +222,14 @@ public final class MainWindow extends JFrame {
       palette_view_.repaint();  // repaint the palette since it may have changed
       updatePaletteUndoRedoUI();
     }
+  }
+  
+  private void CanvasZoomChangeAction(ActionEvent event) {
+    // parse the command, except the first character, which should be the number
+    double scale_factor = Double.parseDouble(
+      event.getActionCommand().substring(1));
+    canvas_view_.setScaleFactor(scale_factor);
+    canvas_view_.repaint();  // repaint the canvas with the new scaling factor
   }
   
   private void BPPChangeAction(ActionEvent event) {
