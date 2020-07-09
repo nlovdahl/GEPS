@@ -25,6 +25,10 @@ import java.awt.Dimension;
 import java.awt.image.BufferedImage;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
+import java.awt.event.MouseEvent;
+import java.awt.Point;
 
 /**
  * A view for the canvas, a subpart of the tileset through which the user makes
@@ -35,14 +39,17 @@ import java.awt.image.AffineTransformOp;
  * @see TilesetView
  */
 public final class CanvasView extends JPanel implements Scrollable {
-  public CanvasView(TilesetController tileset_controller) {
+  public CanvasView(TilesetController tileset_controller, double scale_factor) {
     if (tileset_controller == null) {
       throw new NullPointerException(
         "Cannot create canvas view with null tileset controller.");
-    }  // else, we should have a good palette controller to pair with
+    }  else if (scale_factor <= 0) {
+      throw new IllegalArgumentException(
+        "Cannot have a scale factor less than or equal to zero.");
+    } // else, we should have a good palette controller to pair with
     tileset_controller_ = tileset_controller;
+    canvas_scale_factor_ = scale_factor;
     
-    canvas_scale_factor_ = 4.0;
     redrawCanvasImage();
   }
   

@@ -69,7 +69,7 @@ public final class MainWindow extends JFrame {
     
     palette_view_ = new PaletteView(this, palette_controller_);
     tileset_view_ = new TilesetView(tileset_controller_);
-    canvas_view_ = new CanvasView(tileset_controller_);
+    canvas_view_ = new CanvasView(tileset_controller_, 4.0);  // scale by x4
     
     // initialize the menu bar
     JMenuBar menu_bar = new JMenuBar();
