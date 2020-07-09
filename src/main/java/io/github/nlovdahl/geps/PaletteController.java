@@ -31,7 +31,7 @@ import java.util.LinkedList;
 public final class PaletteController {
   public PaletteController(int bpp) {
     setBPP(bpp);  // try to set the BPP (it might fail for bpp < MIN, > MAX)
-    selection_start_index_ = 0;
+    subpalette_start_index_ = 0;
     
     current_palette_ = new Palette();
     undo_states_ = new LinkedList<>();
@@ -39,7 +39,7 @@ public final class PaletteController {
   }
   
   /**
-   * Returns the color in the specified index in the palette of the palette
+   * Gets the color in the specified index in the palette of the palette
    * controller. This method is a wrapper for the {@link Palette#getColor(int)}
    * method.
    * 
@@ -49,16 +49,27 @@ public final class PaletteController {
   public Color getColor(int index) { return current_palette_.getColor(index); }
   
   /**
-   * Returns the color in the specified index in the current selection of the
+   * Gets the color in the specified index in the current subpalette of the
    * palette controller. This method is essentially a wrapper for the
    * {@link Palette#getColor(int)} method, except that it uses an index relative
-   * to the current selection.
+   * to the current subpalette.
    * 
-   * @param index the index of the color in the selection to return.
-   * @return the color in the specified index in the palette.
+   * @param index the index of the color in the subpalette to return.
+   * @return the color in the specified index in the subpalette.
    */
-  public Color getSelectionColor(int index) {
-    return current_palette_.getColor(getSelectionStartIndex() + index);
+  public Color getSubpaletteColor(int index) {
+    return current_palette_.getColor(getSubpaletteStartIndex() + index);
+  }
+  
+  /**
+   * Gets the currently selected color from the subpalette. This method is
+   * essentially a wrapper for the {@link Palette#getColor(int)} method, except
+   * that it automatically uses the index of the currently selected color.
+   * 
+   * @return the currently selected color in the subpalette.
+   */
+  public Color getSelectedColor() {
+    return current_palette_.getColor(selected_color_index_);
   }
   
   /**
@@ -95,7 +106,7 @@ public final class PaletteController {
   }
   
   /**
-   * Returns the number of bits per pixel being used.
+   * Gets the number of bits per pixel being used.
    * 
    * @return the number of bits per pixel.
    */
@@ -103,14 +114,14 @@ public final class PaletteController {
   
   /**
    * Sets the palette controller to use the specified number of bits per pixel.
-   * This is used in determining the color selection (how many color can be
-   * selected). This is limited between {@link #MIN_BPP} and {@link #MAX_BPP}.
-   * This will also update the starting index of the current selection of colors
-   * in the palette, since this may change.
+   * This is used in determining the subpalette (how many color are in it).
+   * This is limited between {@link #MIN_BPP} and {@link #MAX_BPP}.
+   * This will also update the starting index of the current subpalette of
+   * colors in the palette, since this may change.
    * 
    * @param bpp the number of bits per pixel to be set to.
    * @throws IllegalArgumentException if bpp is less than {@link #MIN_BPP} or
-   *                                  more than {@link #MAX_BPP}.
+   *         more than {@link #MAX_BPP}.
    */
   public void setBPP(int bpp) {
     if (bpp < MIN_BPP) {
@@ -122,68 +133,102 @@ public final class PaletteController {
     }  // else, we have a legal bpp value
     
     bpp_ = bpp;
-    // changing the bpp could change where the starting index should be
-    setSelection(selection_start_index_);
+    // changing the bpp could change where the subpalette and selected color are
+    setSubpalette(selected_color_index_);
+    setSelectedColor(selected_color_index_);
   }
   
   /**
-   * Returns the index marking the start of the currently selected colors in the
-   * palette. This will be the index of the first color in the selection, not
-   * the index before the selection.
+   * Returns the index marking the start of the current subpalette. This will be
+   * the index of the first color in the subpalette, not the index before the
+   * subpalette.
    * 
-   * @return the index marking the start of the selected colors.
+   * @return the index marking the start of the subpalette.
    */
-  public int getSelectionStartIndex() { return selection_start_index_; }
+  public int getSubpaletteStartIndex() { return subpalette_start_index_; }
   
   /**
-   * Returns the index marking the end of the currently selected colors in the
-   * palette. This will be the index of the last color in the selection, not the
-   * index after the selection.
+   * Returns the index marking the end of the current subpalette. This will be
+   * the index of the last color in the subpalette, not the index after the
+   * subpalette.
    * 
-   * @return the index marking the end of the selected colors.
+   * @return the index marking the end of the subpalette.
    */
-  public int getSelectionEndIndex() {
-    return selection_start_index_ + (1 << bpp_) - 1;
+  public int getSubpaletteEndIndex() {
+    return subpalette_start_index_ + (1 << bpp_) - 1;
   }
   
   /**
-   * Sets the selection of colors in the palette so that it will include the
-   * given index. This does not necessarily set the selection start index to the
-   * given index; the size and starting index of the selection is also decided
-   * by the number of bits per pixel being used.
+   * Sets the subpalette so that it will include the given index. This does not
+   * necessarily set the subpalette start index to the given index; the size and
+   * starting index of the subpalette is also decided by the number of bits per
+   * pixel being used.
    * 
-   * @param index the index which should be included by the selection.
+   * @param index the index which should be included by the subpalette.
    * @throws IllegalArgumentException if index is less than 0 or more than
-   *                                  {@link Palette#PALETTE_MAX_SIZE}.
+   *         {@link Palette#PALETTE_MAX_SIZE}.
    */
-  public void setSelection(int index) {
+  public void setSubpalette(int index) {
     if (index < 0) {
       throw new IllegalArgumentException(
-        "Cannot set selection to include index less than 0.");
+        "Cannot set subpalette to include index less than 0.");
     } else if (index >= Palette.PALETTE_MAX_SIZE) {
       throw new IllegalArgumentException(
-        "Cannot set selection to include index greater than or equal to " +
+        "Cannot set subpalette to include index greater than or equal to " +
         Palette.PALETTE_MAX_SIZE + ".");
     }  // else, we have a legal index
     
-    selection_start_index_ = index - (index % (1 << bpp_));
+    subpalette_start_index_ = index - (index % (1 << bpp_));
   }
   
   /**
    * Takes an index for an entry in the palette and returns whether or not that
-   * index is within the current selection of colors in the palette.
+   * index is within the current subpalette.
    * 
-   * @param index the index to check against the current selection.
-   * @return true if the index is in the currently selected colors in the
-   *         palette and false otherwise.
+   * @param index the index to check against the current subpalette.
+   * @return true if the index is in the current subpalette and false otherwise.
    */
-  public boolean isIndexInSelection(int index) {
-    return (index >= getSelectionStartIndex()) &&
-           (index <= getSelectionEndIndex());
+  public boolean isIndexInSubpalette(int index) {
+    return (index >= getSubpaletteStartIndex()) &&
+           (index <= getSubpaletteEndIndex());
   }
   
   /**
-   * Returns an integer containing a color code that can be given to the SNES.
+   * Gets the index in the palette for the currently selected color from the
+   * subpalette.
+   * 
+   * @return the index of the currently selected color from the subpalette.
+   */
+  public int getSelectedColorIndex() { return selected_color_index_; }
+  
+  /**
+   * Gets the index of the currently selected color relative to the current
+   * subpalette.
+   * 
+   * @return the index relative to the current subpalette of the selected color.
+   */
+  public int getSelectedColorSubpaletteIndex() {
+    return selected_color_index_ - subpalette_start_index_;
+  }
+  
+  /**
+   * Sets the index of the selected color based on the given index. If the given
+   * index is within the subpalette, this method simply sets the selected
+   * color's index. If not, however, this method will instead use the given
+   * index to select a different index in the current subpalette.
+   * 
+   * @param index the index used to set the selected color.
+   */
+  public void setSelectedColor(int index) {
+    if (isIndexInSubpalette(index)) {
+      selected_color_index_ = index;
+    } else {  // else, select a different index from the subpalette
+      selected_color_index_ = getSubpaletteStartIndex() + (index % (1 << bpp_));
+    }
+  }
+  
+  /**
+   * Gets an integer containing a color code that can be given to the SNES.
    * The color code consists of the last (least significant) 16 bits. This
    * method is essentially a wrapper for the
    * {@link Palette#getSNESColorCode(java.awt.Color)} method, although it uses
@@ -197,7 +242,7 @@ public final class PaletteController {
   }
   
   /**
-   * Returns a string with the color code that can be given to the SNES in a
+   * Gets a string with the color code that can be given to the SNES in a
    * hexadecimal format. This method is essentially a wrapper for the
    * {@link Palette#getSNESColorCodeString(java.awt.Color)} method, although it
    * uses an index to pick a color in the palette instead of taking a color
@@ -274,7 +319,8 @@ public final class PaletteController {
   public static final int MAX_REDOS = 30;
   
   private int bpp_;
-  private int selection_start_index_;
+  private int subpalette_start_index_;
+  private int selected_color_index_;
   
   private Palette current_palette_;
   private final Deque<Palette> undo_states_;

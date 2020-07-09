@@ -180,8 +180,8 @@ public final class MainWindow extends JFrame {
     // setup property change listeners that need to interact with the UI
     palette_view_.addPropertyChangeListener(PaletteView.NEW_PALETTE_STATE,
                                             (this::PaletteStateChange));
-    palette_view_.addPropertyChangeListener(PaletteView.NEW_PALETTE_SELECTION,
-                                            (this::PaletteSelectionChange));
+    palette_view_.addPropertyChangeListener(PaletteView.NEW_PALETTE_SUBPALETTE,
+                                            (this::PaletteSubpaletteChange));
   }
   
   /**
@@ -246,7 +246,7 @@ public final class MainWindow extends JFrame {
     updatePaletteUndoRedoUI();
   }
   
-  private void PaletteSelectionChange(PropertyChangeEvent event) {
+  private void PaletteSubpaletteChange(PropertyChangeEvent event) {
     canvas_view_.repaint();
     tileset_view_.repaint();
   }

@@ -37,6 +37,7 @@ public final class PaletteView extends JTable {
     super(16, 16);  // create a table with 16 rows / 16 columns
     setRowSelectionAllowed(false);
     setColumnSelectionAllowed(false);
+    setFocusable(false);
     setFillsViewportHeight(true);
     setPreferredScrollableViewportSize(getPreferredSize());
     setTableHeader(null);  // do not show a table header
@@ -49,9 +50,8 @@ public final class PaletteView extends JTable {
         // if it is a right-click (button 3) or control is pressed
         if (event.getButton() == MouseEvent.BUTTON3 || event.isControlDown()) {
           chooseColor(event.getPoint());
-        // else, if it is a left (button 1) double-click
-        } else if (event.getButton() == MouseEvent.BUTTON1 &&
-                   event.getClickCount() == 2) {
+        // else, if it is a left-click (button 1)
+        } else if (event.getButton() == MouseEvent.BUTTON1) {
           changeSelection(event.getPoint());
         }
       }
@@ -100,32 +100,33 @@ public final class PaletteView extends JTable {
       
       // record that the state of the palette will have changed
       firePropertyChange(NEW_PALETTE_STATE, null, null);
-      // if the change was within the selection, record that too
-      if (palette_controller_.isIndexInSelection(chosen_index)) {
-        int selection_index = palette_controller_.getSelectionStartIndex();
-        // use null to represent no new selection (new contents only)
-        firePropertyChange(NEW_PALETTE_SELECTION, selection_index, null);
+      // if the change was within the subpalette, record that too
+      if (palette_controller_.isIndexInSubpalette(chosen_index)) {
+        int selection_index = palette_controller_.getSubpaletteStartIndex();
+        // use null to represent no new subpalette (new contents only)
+        firePropertyChange(NEW_PALETTE_SUBPALETTE, selection_index, null);
       }
     }
   }
   
   /**
-   * Takes a point and changes the selection from the palette to include the
-   * cell at that point. After this, the entire table is repainted to reflect
-   * the change (even if there isn't any).
+   * Takes a point and changes the subpalette and selected color based on the
+   * corresponding palette entry. After this, the entire table is repainted to
+   * reflect the change (even if there isn't any).
    * 
    * @param point the selected point which should correspond to the cell / color
    *              entry being chosen.
    */
   private void changeSelection(Point point) {
-    int old_index = palette_controller_.getSelectionStartIndex();
+    int old_index = palette_controller_.getSubpaletteStartIndex();
     int chosen_index = 16 * rowAtPoint(point) + columnAtPoint(point);
-    palette_controller_.setSelection(chosen_index);
-    int new_index = palette_controller_.getSelectionStartIndex();
+    palette_controller_.setSubpalette(chosen_index);
+    palette_controller_.setSelectedColor(chosen_index);
+    int new_index = palette_controller_.getSubpaletteStartIndex();
     
-    // repaint the entire table and record the selection change
+    // repaint the entire table and record the subpalette change
     repaint();
-    firePropertyChange(NEW_PALETTE_SELECTION, old_index, new_index);
+    firePropertyChange(NEW_PALETTE_SUBPALETTE, old_index, new_index);
   }
   
   // control how the cells in the table are shown
@@ -147,39 +148,44 @@ public final class PaletteView extends JTable {
       cell.setHorizontalAlignment(JLabel.CENTER);
       cell.setText(Palette.getSNESColorCodeString(cell_color));
       
-      // whether there is a border is decided by the selection and position
-      if (palette_controller_.isIndexInSelection(index)) {
-        int top, left, bottom, right;
-        // set the size of each part of the border...
-        if (row == 0 || palette_controller_.isIndexInSelection(index - 16)) {
-          top = 0;
-        } else {
-          top = THICK_BORDER_SIZE;
+      // borders are decided by the subpalette, selected color, and position
+      if (palette_controller_.isIndexInSubpalette(index)) {
+        if (index == palette_controller_.getSelectedColorIndex()) {
+          // draw a solid border if it corresponds to the selected color
+          cell.setBorder(BorderFactory.createDashedBorder(
+            contrast_color, BORDER_THICKNESS, BORDER_LENGTH, BORDER_SPACING,
+            false));
+        } else {  // else, draw around the current subpalette (except the edges)
+          int top = 0, left = 0, bottom = 0, right = 0;
+          // set the border size (to exist) if needed...
+          if (row != 0 &&
+              !palette_controller_.isIndexInSubpalette(index - 16)) {
+            top = BORDER_THICKNESS;
+          }
+          if (column != 0 &&
+              !palette_controller_.isIndexInSubpalette(index - 1)) {
+            left = BORDER_THICKNESS;
+          }
+          if (row != 15 &&
+              !palette_controller_.isIndexInSubpalette(index + 16)) {
+            bottom = BORDER_THICKNESS;
+          }
+          if (column != 15 &&
+              !palette_controller_.isIndexInSubpalette(index + 1)) {
+            right = BORDER_THICKNESS;
+          }
+          
+          cell.setBorder(BorderFactory.createMatteBorder(
+            top, left, bottom, right, contrast_color));
         }
-        if (column == 0 || palette_controller_.isIndexInSelection(index - 1)) {
-          left = 0;
-        } else {
-          left = THICK_BORDER_SIZE;
-        }
-        if (row == 15 || palette_controller_.isIndexInSelection(index + 16)) {
-          bottom = 0;
-        } else {
-          bottom = THICK_BORDER_SIZE;
-        }
-        if (column == 15 || palette_controller_.isIndexInSelection(index + 1)) {
-          right = 0;
-        } else {
-          right = THICK_BORDER_SIZE;
-        }
-        // draw a border between selected and non-selected, except on the edges
-        cell.setBorder(BorderFactory.createMatteBorder(top, left, bottom, right,
-                                                       contrast_color));
       }
       
       return cell;
     }
     
-    private static final int THICK_BORDER_SIZE = 2;
+    private static final int BORDER_THICKNESS = 2;
+    private static final int BORDER_LENGTH = 3;
+    private static final int BORDER_SPACING = 2;
   }
   
   /**
@@ -189,10 +195,10 @@ public final class PaletteView extends JTable {
   public static final String NEW_PALETTE_STATE = "paletteStateUpdate";
   /**
    * The string for a property change event which denotes either a change in at
-   * least one of the colors in the current selection or a change in the
-   * selection itself.
+   * least one of the colors in the current subpalette or a change in the
+   * subpalette itself.
    */
-  public static final String NEW_PALETTE_SELECTION = "paletteSelectionUpdate";
+  public static final String NEW_PALETTE_SUBPALETTE = "paletteSubpaletteUpdate";
   
   private final PaletteController palette_controller_;
   private final SNESColorChooser color_chooser_;
