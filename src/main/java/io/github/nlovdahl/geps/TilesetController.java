@@ -54,7 +54,6 @@ public final class TilesetController {
     tileset_width_ = 8;
     tileset_height_ = 8;
     stroke_active_ = false;
-    stroke_change_ = false;
   }
   
   /**
@@ -140,20 +139,23 @@ public final class TilesetController {
   }
   
   /**
-   * Begins a brush stroke across the tileset at the specified coordinates. This
-   * will also record that an active stroke has begun. If invalid coordinates
-   * are provided, the stroke will still begin, but the tileset will not be
-   * altered.
+   * Begins a brush stroke across the tileset at the specified coordinates and
+   * record that an active stroke has begun. This method will also save the
+   * state of the tileset before changing it for a possible undo. If invalid
+   * coordinates are provided, the stroke will still begin and the tileset's
+   * state will be saved, but the tileset will not be altered.
    * 
    * @param x the horizontal component of the coordinates to start at.
    * @param y the vertical component of the coordinates to start at.
    */
   public void beginStroke(int x, int y) {
+    saveForUndo();
+    redo_states_.clear();
+    
     // only make a change to the tileset if the point is in range
     if (isPointInTileset(x, y)) {
       setPixelIndex(x, y,
                     palette_controller_.getSelectedColorSubpaletteIndex());
-      stroke_change_ = true;
     }
     
     last_stroke_x_ = x;
@@ -173,10 +175,9 @@ public final class TilesetController {
    *          with.
    */
   public void addToStroke(int x, int y) {
+    // draw only if the stroke is active AND the coordinates have changed
     if (stroke_active_ && (x != last_stroke_x_ || y != last_stroke_y_)) {
-      // draw the line, and keep track of changes being made
-      stroke_change_ = drawStrokeLine(last_stroke_x_, last_stroke_y_, x, y) ||
-                       stroke_change_;
+      drawStrokeLine(last_stroke_x_, last_stroke_y_, x, y);
       
       last_stroke_x_ = x;
       last_stroke_y_ = y;
@@ -186,26 +187,20 @@ public final class TilesetController {
   /**
    * Ends a brush stroke across the tileset at the specified coordinates; a line
    * will be drawn between the last coordinates in the stroke and the given
-   * coordinates. This method will also save the state of the tileset so that it
-   * may be undone later if the tileset has been changed (either by this method,
-   * {@link #beginStroke(int, int)}, or {@link #addToStroke(int, int)}). If
-   * there is no active stroke or the given coordinates are the same as the last
-   * coordinates, then the tileset will not be altered and no new state will be
-   * saved.
+   * coordinates. If there is no active stroke, then the tileset will not be
+   * altered. No line will be drawn if the specified coordinates are the same as
+   * the last coordinates.
    * 
    * @param x the horizontal component of the coordinates to end at.
    * @param y the vertical component of the coordinates to end at.
    */
   public void endStroke(int x, int y) {
-    if (stroke_active_ && (x != last_stroke_x_ || y != last_stroke_y_)) {
-      // draw the line, and keep track of changes being made
-      stroke_change_ = drawStrokeLine(last_stroke_x_, last_stroke_y_, x, y) ||
-                       stroke_change_;
-      
-      if (stroke_change_) {
-        saveForUndo();
-        stroke_change_ = false;
+    if (stroke_active_) {
+      // draw the line if the coordinates are different from the last ones
+      if (x != last_stroke_x_ || y != last_stroke_y_) {
+        drawStrokeLine(last_stroke_x_, last_stroke_y_, x, y);
       }
+      
       stroke_active_ = false;
     }  // else, do nothing
   }
@@ -310,7 +305,7 @@ public final class TilesetController {
   
   // draw a line on the tileset between the two specified coordinates
   // return true if changes are made to the tileset
-  private boolean drawStrokeLine(int start_x, int start_y,
+  private void drawStrokeLine(int start_x, int start_y,
                                  int end_x, int end_y) {
     int delta_x = Math.abs(start_x - end_x) + 1;
     int delta_y = Math.abs(start_y - end_y) + 1;
@@ -321,8 +316,6 @@ public final class TilesetController {
     if (start_x <= end_x) { x_step = 1; } else { x_step = -1; }
     if (start_y <= end_y) { y_step = 1; } else { y_step = -1; }
     
-    boolean change = false;  // change to true if we make a change
-    
     if (delta_x >= delta_y) {  // step along x
       rate = delta_y;
       limit = delta_x;
@@ -331,7 +324,6 @@ public final class TilesetController {
         if (isPointInTileset(x, y)) {
           setPixelIndex(x, y,
                         palette_controller_.getSelectedColorSubpaletteIndex());
-          change = true;
         }
         
         x += x_step;
@@ -345,7 +337,6 @@ public final class TilesetController {
       if (isPointInTileset(x, y)) {
         setPixelIndex(x, y,
                       palette_controller_.getSelectedColorSubpaletteIndex());
-        change = true;
       }
     } else {  // step along y
       rate = delta_x;
@@ -355,7 +346,6 @@ public final class TilesetController {
         if (isPointInTileset(x, y)) {
           setPixelIndex(x, y,
                         palette_controller_.getSelectedColorSubpaletteIndex());
-          change = true;
         }
         
         y += y_step;
@@ -369,11 +359,8 @@ public final class TilesetController {
       if (isPointInTileset(x, y)) {
         setPixelIndex(x, y,
                       palette_controller_.getSelectedColorSubpaletteIndex());
-        change = true;
       }
     }
-    
-    return change;
   }
   
   /** The maximum number of states that will be recorded to be undone. */
@@ -385,7 +372,6 @@ public final class TilesetController {
   private int tileset_height_;  // number of tiles from top to bottom
   
   private boolean stroke_active_;
-  private boolean stroke_change_;
   private int last_stroke_x_;
   private int last_stroke_y_;
   

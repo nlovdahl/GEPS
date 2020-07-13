@@ -80,12 +80,17 @@ public final class MainWindow extends JFrame {
     file_menu.add(exit_menu_item);
     
     JMenu edit_menu = new JMenu("Edit");  // edit menu initialization...
-    palette_undo_menu_item_ = new JMenuItem("Undo Palette");
-    palette_undo_menu_item_.setEnabled(palette_controller_.canUndo());
+    tileset_undo_menu_item_ = new JMenuItem("Undo (Tileset)");
+    tileset_undo_menu_item_.addActionListener(this::TilesetUndoAction);
+    edit_menu.add(tileset_undo_menu_item_);
+    tileset_redo_menu_item_ = new JMenuItem("Redo (Tileset)");
+    tileset_redo_menu_item_.addActionListener(this::TilesetRedoAction);
+    edit_menu.add(tileset_redo_menu_item_);
+    edit_menu.add(new JSeparator());
+    palette_undo_menu_item_ = new JMenuItem("Undo (Palette)");
     palette_undo_menu_item_.addActionListener(this::PaletteUndoAction);
     edit_menu.add(palette_undo_menu_item_);
-    palette_redo_menu_item_ = new JMenuItem("Redo Palette");
-    palette_redo_menu_item_.setEnabled(palette_controller_.canRedo());
+    palette_redo_menu_item_ = new JMenuItem("Redo (Palette)");
     palette_redo_menu_item_.addActionListener(this::PaletteRedoAction);
     edit_menu.add(palette_redo_menu_item_);
     
@@ -110,7 +115,6 @@ public final class MainWindow extends JFrame {
     canvas_zoom_8_item.addActionListener(this::CanvasZoomChangeAction);
     canvas_zoom_4_item.setSelected(true);  // begin with x4 zoom by default
     view_menu.add(canvas_zoom_submenu);
-    
     
     JMenu format_menu = new JMenu("Format");  // format menu initialization...
     JMenu bpp_submenu = new JMenu("Bits per Pixel");
@@ -170,6 +174,10 @@ public final class MainWindow extends JFrame {
       if (location < min) { palette_split.setDividerLocation(min); }
     });
     
+    // update parts of the UI that are updated dynamically
+    updateTilesetUndoRedoUI();
+    updatePaletteUndoRedoUI();
+    
     // arrange the layout of the frame's components within the frame
     setLayout(new BorderLayout());
     Container pane = getContentPane();
@@ -178,6 +186,8 @@ public final class MainWindow extends JFrame {
     pack();
     
     // setup property change listeners that need to interact with the UI
+    canvas_view_.addPropertyChangeListener(CanvasView.NEW_CANVAS_STATE,
+                                           this::TilesetStateChange);
     palette_view_.addPropertyChangeListener(PaletteView.NEW_PALETTE_STATE,
                                             (this::PaletteStateChange));
     palette_view_.addPropertyChangeListener(PaletteView.NEW_PALETTE_SUBPALETTE,
@@ -206,6 +216,24 @@ public final class MainWindow extends JFrame {
   // methods to handle actions and property change events
   private void ExitAction(ActionEvent event) {
     System.exit(0);
+  }
+  
+  private void TilesetUndoAction(ActionEvent event) {
+    if (tileset_controller_.canUndo()) {
+      tileset_controller_.undo();
+      tileset_view_.repaint();  // repaint tileset & canvas views since it may
+      canvas_view_.repaint();   // have changed
+      updateTilesetUndoRedoUI();
+    }
+  }
+  
+  private void TilesetRedoAction(ActionEvent event) {
+    if (tileset_controller_.canRedo()) {
+      tileset_controller_.redo();
+      tileset_view_.repaint();  // repaint tileset & canvas views since it may
+      canvas_view_.repaint();   // have changed
+      updateTilesetUndoRedoUI();
+    }
   }
   
   private void PaletteUndoAction(ActionEvent event) {
@@ -242,6 +270,10 @@ public final class MainWindow extends JFrame {
     }
   }
   
+  private void TilesetStateChange(PropertyChangeEvent event) {
+    updateTilesetUndoRedoUI();
+  }
+  
   private void PaletteStateChange(PropertyChangeEvent event) {
     updatePaletteUndoRedoUI();
   }
@@ -257,7 +289,14 @@ public final class MainWindow extends JFrame {
     palette_redo_menu_item_.setEnabled(palette_controller_.canRedo());
   }
   
+  private void updateTilesetUndoRedoUI() {
+    tileset_undo_menu_item_.setEnabled(tileset_controller_.canUndo());
+    tileset_redo_menu_item_.setEnabled(tileset_controller_.canRedo());
+  }
+  
   // parts of the UI that need to be accessible to be updated dynamically
+  private final JMenuItem tileset_undo_menu_item_;
+  private final JMenuItem tileset_redo_menu_item_;
   private final JMenuItem palette_undo_menu_item_;
   private final JMenuItem palette_redo_menu_item_;
   

@@ -171,6 +171,9 @@ public final class CanvasView extends JPanel implements Scrollable {
     tileset_controller_.endStroke(tileset_x, tileset_y);
     
     repaint();
+    
+    // fire a property change event just in case the state has been changed
+    firePropertyChange(NEW_CANVAS_STATE, null, null);
   }
   
   private void redrawCanvasImage() {
@@ -201,6 +204,12 @@ public final class CanvasView extends JPanel implements Scrollable {
     setPreferredSize(canvas_image_size_);
     revalidate();  // the new area will be 'dirty', repaint it all
   }
+  
+  /**
+   * The string for a property change event which denotes a change in the state
+   * of the canvas.
+   */
+  public static final String NEW_CANVAS_STATE = "canvasStateUpdate";
   
   private double canvas_scale_factor_;
   private BufferedImage canvas_image_;
