@@ -50,6 +50,32 @@ public final class CanvasView extends JPanel implements Scrollable {
     tileset_controller_ = tileset_controller;
     canvas_scale_factor_ = scale_factor;
     
+    addMouseListener(new MouseListener() {
+      @Override public void mousePressed(MouseEvent event) {
+        // if the left mouse button (button 1) is pressed
+        if (event.getButton() == MouseEvent.BUTTON1) {
+          beginStroke(event.getPoint());
+        }
+      }
+      @Override public void mouseReleased(MouseEvent event) {
+        // if the left mouse button (button 1) is released
+        if (event.getButton() == MouseEvent.BUTTON1) {
+          endStroke(event.getPoint());
+        }
+      }
+      // do nothing for other situations
+      @Override public void mouseClicked(MouseEvent event) {}
+      @Override public void mouseEntered(MouseEvent event) {}
+      @Override public void mouseExited(MouseEvent event) {}
+    });
+    addMouseMotionListener(new MouseMotionListener() {
+      @Override public void mouseDragged(MouseEvent event) {
+        addToStroke(event.getPoint());
+      }
+      // do nothing for other situations
+      @Override public void mouseMoved(MouseEvent event) {}
+    });
+    
     redrawCanvasImage();
   }
   
@@ -111,10 +137,46 @@ public final class CanvasView extends JPanel implements Scrollable {
     return (int) canvas_scale_factor_;
   }
   
+  private void beginStroke(Point point) {
+    // convert coordinates to pixels in the tileset and pass them on
+    int mouse_x = point.x;
+    int mouse_y = point.y;
+    int tileset_x = (int) Math.rint(mouse_x / canvas_scale_factor_);
+    int tileset_y = (int) Math.rint(mouse_y / canvas_scale_factor_);
+    
+    tileset_controller_.beginStroke(tileset_x, tileset_y);
+    
+    repaint();
+  }
+  
+  private void addToStroke(Point point) {
+    // convert coordinates to pixels in the tileset and pass them on
+    int mouse_x = point.x;
+    int mouse_y = point.y;
+    int tileset_x = (int) Math.rint(mouse_x / canvas_scale_factor_);
+    int tileset_y = (int) Math.rint(mouse_y / canvas_scale_factor_);
+    
+    tileset_controller_.addToStroke(tileset_x, tileset_y);
+      
+    repaint();
+  }
+  
+  private void endStroke(Point point) {
+    // convert coordinates to pixels in the tileset and pass them on
+    int mouse_x = point.x;
+    int mouse_y = point.y;
+    int tileset_x = (int) Math.rint(mouse_x / canvas_scale_factor_);
+    int tileset_y = (int) Math.rint(mouse_y / canvas_scale_factor_);
+    
+    tileset_controller_.endStroke(tileset_x, tileset_y);
+    
+    repaint();
+  }
+  
   private void redrawCanvasImage() {
     BufferedImage base_image = new BufferedImage(
-      tileset_controller_.getTilesetWidth() * Tileset.TILE_WIDTH,
-      tileset_controller_.getTilesetHeight() * Tileset.TILE_HEIGHT,
+      tileset_controller_.getWidthInPixels(),
+      tileset_controller_.getHeightInPixels(),
       BufferedImage.TYPE_INT_ARGB);
     
     for (int x = 0; x < base_image.getWidth(); x++) {
