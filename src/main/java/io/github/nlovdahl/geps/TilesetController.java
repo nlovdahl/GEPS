@@ -34,26 +34,57 @@ import java.util.LinkedList;
  */
 public final class TilesetController {
   /**
-   * Creates a tileset controller paired with a given {@link PaletteController}.
-   * The controller handles making changes to the tileset's data model.
+   * Creates a tileset controller using the given number of bits per pixel and
+   * an initial tileset with the specified width and height.
    * 
-   * @param palette_controller the palette controller to be paired with.
-   * @throws NullPointerException if the given palette controller is null.
+   * @param bpp the number of bits per pixel to be used.
+   * @param width the width of the initial tileset in tiles.
+   * @param height the height of the initial tileset in tiles.
    */
-  public TilesetController(PaletteController palette_controller) {
-    if (palette_controller == null) {
-      throw new NullPointerException(
-        "Cannot create tileset controller with null palette controller.");
-    }  // else, we should have a good palette controller to pair with
-    palette_controller_ = palette_controller;
+  public TilesetController(int bpp, int width, int height) {
+    setBPP(bpp);  // try to set the BPP (it might fail for bpp < MIN, > MAX)
     
-    current_tileset_ = new Tileset();
+    current_tileset_ = new Tileset(width * height, bpp);
     undo_states_ = new LinkedList<>();
     redo_states_ = new LinkedList<>();
     
-    tileset_width_ = 8;
-    tileset_height_ = 8;
+    tileset_width_ = width;
+    tileset_height_ = height;
     stroke_active_ = false;
+  }
+  
+  /**
+   * Gets the number of bits per pixel being used.
+   * 
+   * @return the number of bits per pixel.
+   */
+  public int getBPP() { return bpp_; }
+  
+  /**
+   * Sets the palette controller to use the specified number of bits per pixel.
+   * This is used in determining the indexes used by the tileset. This is
+   * limited between {@link PaletteController#MIN_BPP} and
+   * {@link PaletteController#MAX_BPP}.
+   * 
+   * @param bpp the number of bits per pixel to be set to.
+   * @throws IllegalArgumentException if bpp is less than
+   *         {@link PaletteController#MIN_BPP} or more than
+   *         {@link PaletteController#MAX_BPP}.
+   */
+  public void setBPP(int bpp) {
+    if (bpp < PaletteController.MIN_BPP) {
+      throw new IllegalArgumentException(
+        "Cannot set bpp to value less than " +
+        Integer.toString(PaletteController.MIN_BPP) + ".");
+    } else if (bpp > PaletteController.MAX_BPP) {
+      throw new IllegalArgumentException(
+        "Cannot set bpp to value more than " +
+        Integer.toString(PaletteController.MAX_BPP) + ".");
+    }  // else, we have a legal bpp value
+    
+    bpp_ = bpp;
+    // the tileset might need to be reinterpretted if the bpp changes
+    ///TODO
   }
   
   /**
@@ -120,46 +151,51 @@ public final class TilesetController {
   }
   
   /**
-   * Gets the color of the pixel in the tileset at the specified coordinates.
-   * The given coordinates are based from (0, 0) at the top-right and correspond
-   * to pixels in the tileset.
+   * Gets the color of the pixel in the tileset at the specified coordinates
+   * by referencing the given palette controller. The given coordinates are
+   * based from (0, 0) at the top-right and correspond to pixels in the tileset.
    * 
    * @param x the horizontal component of the coordinates to get the color for.
    * @param y the vertical component of the coordinates to get the color for.
+   * @param palette_controller the palette controller to reference.
    * @return the color corresponding to the specified coordinates in the
    *         tileset, or null if the coordinates do not correspond to a pixel.
    */
-  public Color getPixelColor(int x, int y) {
+  public Color getPixelColor(int x, int y,
+                             PaletteController palette_controller) {
     int pixel_index = getPixelIndex(x, y);
     if (pixel_index >= 0) {
-      return palette_controller_.getSubpaletteColor(pixel_index);
+      return palette_controller.getSubpaletteColor(pixel_index);
     } else {
       return null;
     }
   }
   
   /**
-   * Begins a brush stroke across the tileset at the specified coordinates and
-   * record that an active stroke has begun. This method will also save the
-   * state of the tileset before changing it for a possible undo. If invalid
-   * coordinates are provided, the stroke will still begin and the tileset's
-   * state will be saved, but the tileset will not be altered.
+   * Begins a brush stroke across the tileset at the specified coordinates using
+   * the given index, and records that an active stroke has begun. This method
+   * will also save the state of the tileset before changing it for a possible
+   * undo. If invalid coordinates are provided, the stroke will still begin and
+   * the tileset's state will be saved, but the tileset will not be altered.
+   * <p>
+   * The other stroke methods, {@link #addToStroke(int, int)} and
+   * {@link #endStroke(int, int)} will use the index given to this method for
+   * the respective stroke.
    * 
    * @param x the horizontal component of the coordinates to start at.
    * @param y the vertical component of the coordinates to start at.
+   * @param index the index to use for the stroke.
    */
-  public void beginStroke(int x, int y) {
+  public void beginStroke(int x, int y, int index) {
     saveForUndo();
     redo_states_.clear();
     
     // only make a change to the tileset if the point is in range
-    if (isPointInTileset(x, y)) {
-      setPixelIndex(x, y,
-                    palette_controller_.getSelectedColorSubpaletteIndex());
-    }
+    if (isPointInTileset(x, y)) { setPixelIndex(x, y, index); }
     
     last_stroke_x_ = x;
     last_stroke_y_ = y;
+    stroke_index_ = index;
     stroke_active_ = true;
   }
   
@@ -168,6 +204,9 @@ public final class TilesetController {
    * the given coordinates. If there is no active stroke, this method will do
    * nothing. Likewise, if the given coordinates are the same as the last
    * coordinates, nothing will happen.
+   * <p>
+   * The index used by this method will be the one given to
+   * {@link #beginStroke(int, int, int)} for the respective stroke.
    * 
    * @param x the horizontal component of the coordinates to continue the stroke
    *          with.
@@ -177,7 +216,7 @@ public final class TilesetController {
   public void addToStroke(int x, int y) {
     // draw only if the stroke is active AND the coordinates have changed
     if (stroke_active_ && (x != last_stroke_x_ || y != last_stroke_y_)) {
-      drawStrokeLine(last_stroke_x_, last_stroke_y_, x, y);
+      drawStrokeLine(last_stroke_x_, last_stroke_y_, x, y, stroke_index_);
       
       last_stroke_x_ = x;
       last_stroke_y_ = y;
@@ -190,6 +229,9 @@ public final class TilesetController {
    * coordinates. If there is no active stroke, then the tileset will not be
    * altered. No line will be drawn if the specified coordinates are the same as
    * the last coordinates.
+   * <p>
+   * The index used by this method will be the one given to
+   * {@link #beginStroke(int, int, int)} for the respective stroke.
    * 
    * @param x the horizontal component of the coordinates to end at.
    * @param y the vertical component of the coordinates to end at.
@@ -198,7 +240,7 @@ public final class TilesetController {
     if (stroke_active_) {
       // draw the line if the coordinates are different from the last ones
       if (x != last_stroke_x_ || y != last_stroke_y_) {
-        drawStrokeLine(last_stroke_x_, last_stroke_y_, x, y);
+        drawStrokeLine(last_stroke_x_, last_stroke_y_, x, y, stroke_index_);
       }
       
       stroke_active_ = false;
@@ -306,7 +348,7 @@ public final class TilesetController {
   // draw a line on the tileset between the two specified coordinates
   // return true if changes are made to the tileset
   private void drawStrokeLine(int start_x, int start_y,
-                                 int end_x, int end_y) {
+                              int end_x, int end_y, int index) {
     int delta_x = Math.abs(start_x - end_x) + 1;
     int delta_y = Math.abs(start_y - end_y) + 1;
     int rate, limit, accumulator = 0;
@@ -321,10 +363,7 @@ public final class TilesetController {
       limit = delta_x;
       
       while (x != end_x) {  // draws all but the last point in the line
-        if (isPointInTileset(x, y)) {
-          setPixelIndex(x, y,
-                        palette_controller_.getSelectedColorSubpaletteIndex());
-        }
+        if (isPointInTileset(x, y)) { setPixelIndex(x, y, index); }
         
         x += x_step;
         accumulator += rate;
@@ -334,19 +373,13 @@ public final class TilesetController {
         }
       }  // we still need to draw the endpoint after this
       
-      if (isPointInTileset(x, y)) {
-        setPixelIndex(x, y,
-                      palette_controller_.getSelectedColorSubpaletteIndex());
-      }
+      if (isPointInTileset(x, y)) { setPixelIndex(x, y, index); }
     } else {  // step along y
       rate = delta_x;
       limit = delta_y;
       
       while (y != end_y) {  // draws all but the last point in the line
-        if (isPointInTileset(x, y)) {
-          setPixelIndex(x, y,
-                        palette_controller_.getSelectedColorSubpaletteIndex());
-        }
+        if (isPointInTileset(x, y)) { setPixelIndex(x, y, index); }
         
         y += y_step;
         accumulator += rate;
@@ -356,10 +389,7 @@ public final class TilesetController {
         }
       }  // we still need to draw the endpoint after this
       
-      if (isPointInTileset(x, y)) {
-        setPixelIndex(x, y,
-                      palette_controller_.getSelectedColorSubpaletteIndex());
-      }
+      if (isPointInTileset(x, y)) { setPixelIndex(x, y, index); }
     }
   }
   
@@ -371,12 +401,13 @@ public final class TilesetController {
   private int tileset_width_;   // number of tiles from left to right
   private int tileset_height_;  // number of tiles from top to bottom
   
+  private int bpp_;
   private boolean stroke_active_;
+  private int stroke_index_;
   private int last_stroke_x_;
   private int last_stroke_y_;
   
   private Tileset current_tileset_;
-  private final PaletteController palette_controller_;
   private final Deque<Tileset> undo_states_;
   private final Deque<Tileset> redo_states_;
 }

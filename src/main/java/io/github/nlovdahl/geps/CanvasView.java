@@ -39,15 +39,20 @@ import java.awt.Point;
  * @see TilesetView
  */
 public final class CanvasView extends JPanel implements Scrollable {
-  public CanvasView(TilesetController tileset_controller, double scale_factor) {
+  public CanvasView(TilesetController tileset_controller,
+                    PaletteController palette_controller, double scale_factor) {
     if (tileset_controller == null) {
       throw new NullPointerException(
         "Cannot create canvas view with null tileset controller.");
-    }  else if (scale_factor <= 0) {
+    } else if (palette_controller == null) {
+      throw new NullPointerException(
+        "Cannot create canvas view with null palette controller.");
+    } else if (scale_factor <= 0) {
       throw new IllegalArgumentException(
         "Cannot have a scale factor less than or equal to zero.");
     } // else, we should have a good palette controller to pair with
     tileset_controller_ = tileset_controller;
+    palette_controller_ = palette_controller;
     canvas_scale_factor_ = scale_factor;
     
     addMouseListener(new MouseListener() {
@@ -144,7 +149,9 @@ public final class CanvasView extends JPanel implements Scrollable {
     int tileset_x = (int) Math.rint(mouse_x / canvas_scale_factor_);
     int tileset_y = (int) Math.rint(mouse_y / canvas_scale_factor_);
     
-    tileset_controller_.beginStroke(tileset_x, tileset_y);
+    tileset_controller_.beginStroke(
+      tileset_x, tileset_y,
+      palette_controller_.getSelectedColorSubpaletteIndex());
     
     repaint();
   }
@@ -184,7 +191,8 @@ public final class CanvasView extends JPanel implements Scrollable {
     
     for (int x = 0; x < base_image.getWidth(); x++) {
       for (int y = 0; y < base_image.getHeight(); y++) {
-        Color pixel_color = tileset_controller_.getPixelColor(x, y);
+        Color pixel_color = tileset_controller_.getPixelColor(
+          x, y, palette_controller_);
         if (pixel_color != null) {  // use the color if coordinates are valid
           base_image.setRGB(x, y, pixel_color.getRGB());
         } else {  // else, draw a transparent color (no tileset here)
@@ -216,4 +224,5 @@ public final class CanvasView extends JPanel implements Scrollable {
   private Dimension canvas_image_size_;
   
   private final TilesetController tileset_controller_;
+  private final PaletteController palette_controller_;
 }

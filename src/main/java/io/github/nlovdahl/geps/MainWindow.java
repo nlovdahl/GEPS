@@ -64,12 +64,19 @@ public final class MainWindow extends JFrame {
     });
     
     // initialize the controllers and views
-    palette_controller_ = new PaletteController(4);  // start with 4 BPP
-    tileset_controller_ = new TilesetController(palette_controller_);
+    int initial_bpp = 4;
+    int initial_tileset_width = 8;
+    int initial_tileset_height = 8;
+    double initial_canvas_scale_factor = 4.0;  // scale by x4
+    
+    palette_controller_ = new PaletteController(initial_bpp);
+    tileset_controller_ = new TilesetController(
+      initial_bpp, initial_tileset_width, initial_tileset_height);
     
     palette_view_ = new PaletteView(this, palette_controller_);
     tileset_view_ = new TilesetView(tileset_controller_);
-    canvas_view_ = new CanvasView(tileset_controller_, 4.0);  // scale by x4
+    canvas_view_ = new CanvasView(
+      tileset_controller_, palette_controller_, initial_canvas_scale_factor);  
     
     // initialize the menu bar
     JMenuBar menu_bar = new JMenuBar();
@@ -221,8 +228,8 @@ public final class MainWindow extends JFrame {
   private void TilesetUndoAction(ActionEvent event) {
     if (tileset_controller_.canUndo()) {
       tileset_controller_.undo();
-      tileset_view_.repaint();  // repaint tileset & canvas views since it may
-      canvas_view_.repaint();   // have changed
+      tileset_view_.repaint();  // repaint since things may have changed
+      canvas_view_.repaint();
       updateTilesetUndoRedoUI();
     }
   }
@@ -230,8 +237,8 @@ public final class MainWindow extends JFrame {
   private void TilesetRedoAction(ActionEvent event) {
     if (tileset_controller_.canRedo()) {
       tileset_controller_.redo();
-      tileset_view_.repaint();  // repaint tileset & canvas views since it may
-      canvas_view_.repaint();   // have changed
+      tileset_view_.repaint();  // repaint since things may have changed
+      canvas_view_.repaint();
       updateTilesetUndoRedoUI();
     }
   }
@@ -239,7 +246,9 @@ public final class MainWindow extends JFrame {
   private void PaletteUndoAction(ActionEvent event) {
     if (palette_controller_.canUndo()) {
       palette_controller_.undo();
-      palette_view_.repaint();  // repaint the palette since it may have changed
+      palette_view_.repaint();  // repaint since things may have changed
+      canvas_view_.repaint();
+      tileset_view_.repaint();
       updatePaletteUndoRedoUI();
     }
   }
@@ -247,7 +256,9 @@ public final class MainWindow extends JFrame {
   private void PaletteRedoAction(ActionEvent event) {
     if (palette_controller_.canRedo()) {
       palette_controller_.redo();
-      palette_view_.repaint();  // repaint the palette since it may have changed
+      palette_view_.repaint();  // repaint since things may have changed
+      canvas_view_.repaint();
+      tileset_view_.repaint();
       updatePaletteUndoRedoUI();
     }
   }
@@ -266,7 +277,10 @@ public final class MainWindow extends JFrame {
     // proceed only if the bpp is within a tolerable range
     if (bpp >= PaletteController.MIN_BPP && bpp <= PaletteController.MAX_BPP) {
       palette_controller_.setBPP(bpp);
-      palette_view_.repaint();  // repaint the palette since it may have changed
+      tileset_controller_.setBPP(bpp);
+      palette_view_.repaint();  // repaint since things may have changed
+      canvas_view_.repaint();
+      tileset_view_.repaint();
     }
   }
   

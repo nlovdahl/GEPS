@@ -28,9 +28,6 @@ package io.github.nlovdahl.geps;
  * @see CanvasView
  */
 public final class Tileset {
-  /** Creates a tileset with a default number of tiles and bits per pixel. */
-  public Tileset() { this(64, 4); }
-  
   /**
    * Creates a tileset with the given number of tiles and bits per pixel. The
    * contents of the tileset are a default (no pattern). A tileset must have at
