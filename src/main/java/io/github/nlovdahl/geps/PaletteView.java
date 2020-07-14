@@ -45,7 +45,8 @@ public final class PaletteView extends JTable {
     setDefaultRenderer(Object.class, new PaletteRenderer());
     
     addMouseListener(new MouseListener() {
-      @Override public void mousePressed(MouseEvent event) {
+      @Override
+      public void mousePressed(MouseEvent event) {
         // if it is a right-click (button 3) or control is pressed
         if (event.getButton() == MouseEvent.BUTTON3 || event.isControlDown()) {
           chooseColor(event.getPoint());
