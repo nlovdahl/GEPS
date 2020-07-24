@@ -37,54 +37,51 @@ public final class TilesetController {
    * Creates a tileset controller using the given number of bits per pixel and
    * an initial tileset with the specified width and height.
    * 
-   * @param bpp the number of bits per pixel to be used.
    * @param width the width of the initial tileset in tiles.
    * @param height the height of the initial tileset in tiles.
+   * @param bpp the number of bits per pixel to be used. This should be between
+   *        {@link Tileset#MIN_BPP} and {@link Tileset#MAX_BPP}.
+   * @param bitplane_format the number corresponding to a bitplane format for
+   *        the tileset. This should be one of {@link Tileset#BITPLANE_SERIAL},
+   *        {@link Tileset#BITPLANE_PLANAR}, or
+   *        {@link Tileset#BITPLANE_INTERTWINED}.
+   * @throws IllegalArgumentException if either the width or height are less
+   *         than one, or if bpp or bitplane_format are invalid.
    */
-  public TilesetController(int bpp, int width, int height) {
-    setBPP(bpp);  // try to set the BPP (it might fail for bpp < MIN, > MAX)
-    
-    current_tileset_ = new Tileset(width * height, bpp);
-    undo_states_ = new LinkedList<>();
-    redo_states_ = new LinkedList<>();
+  public TilesetController(int width, int height,
+                           int bpp, int bitplane_format) {
+    if (width < 1 || height < 1) {
+      throw new IllegalArgumentException(
+        "Cannot initialize a tileset controller with a width of " +
+        Integer.toString(width) + " and a height of " +
+        Integer.toString(height) + ".");
+    } else if (width * height > Tileset.MAX_TILES) {
+      throw new IllegalArgumentException(
+        "Width and height would initialize a tileset with too many tiles.");
+    } else if (bpp < Tileset.MIN_BPP) {
+      throw new IllegalArgumentException(
+        "Cannot set bpp to value less than " +
+        Integer.toString(Tileset.MIN_BPP) + ".");
+    } else if (bpp > Tileset.MAX_BPP) {
+      throw new IllegalArgumentException(
+        "Cannot set bpp to value more than " +
+        Integer.toString(Tileset.MAX_BPP) + ".");
+    } else if (bitplane_format != Tileset.BITPLANE_SERIAL &&
+               bitplane_format != Tileset.BITPLANE_PLANAR &&
+               bitplane_format != Tileset.BITPLANE_INTERTWINED) {
+      throw new IllegalArgumentException(
+        Integer.toString(bitplane_format) + " does not correspond to a valid " +
+        "bitplane format.");
+    }  // else, we have legal values
     
     tileset_width_ = width;
     tileset_height_ = height;
-    stroke_active_ = false;
-  }
-  
-  /**
-   * Gets the number of bits per pixel being used.
-   * 
-   * @return the number of bits per pixel.
-   */
-  public int getBPP() { return bpp_; }
-  
-  /**
-   * Sets the palette controller to use the specified number of bits per pixel.
-   * This is used in determining the indexes used by the tileset. This is
-   * limited between {@link PaletteController#MIN_BPP} and
-   * {@link PaletteController#MAX_BPP}.
-   * 
-   * @param bpp the number of bits per pixel to be set to.
-   * @throws IllegalArgumentException if bpp is less than
-   *         {@link PaletteController#MIN_BPP} or more than
-   *         {@link PaletteController#MAX_BPP}.
-   */
-  public void setBPP(int bpp) {
-    if (bpp < PaletteController.MIN_BPP) {
-      throw new IllegalArgumentException(
-        "Cannot set bpp to value less than " +
-        Integer.toString(PaletteController.MIN_BPP) + ".");
-    } else if (bpp > PaletteController.MAX_BPP) {
-      throw new IllegalArgumentException(
-        "Cannot set bpp to value more than " +
-        Integer.toString(PaletteController.MAX_BPP) + ".");
-    }  // else, we have a legal bpp value
     
-    bpp_ = bpp;
-    // the tileset might need to be reinterpretted if the bpp changes
-    ///TODO
+    current_tileset_ = new Tileset(width * height, bpp, bitplane_format);
+    undo_states_ = new LinkedList<>();
+    redo_states_ = new LinkedList<>();
+    
+    stroke_active_ = false;
   }
   
   /**
@@ -119,6 +116,25 @@ public final class TilesetController {
    */
   public int getHeightInPixels() {
     return tileset_height_ * Tileset.TILE_HEIGHT;
+  }
+  
+  /**
+   * Gets the number of bits per pixel being used for the current tileset. This
+   * method is a wrapper for the {@link Tileset#getBPP()} method.
+   * 
+   * @return the number of bits per pixel.
+   */
+  public int getBPP() { return current_tileset_.getBPP(); }
+  
+  /**
+   * Gets the number denoting which bitplane format is being used for the
+   * current tileset. This method is a wrapper for the
+   * {@link Tileset#getBitplaneFormat()} method.
+   * 
+   * @return the number denoting the current tileset's bitplane format.
+   */
+  public int getBitplaneFormat() {
+    return current_tileset_.getBitplaneFormat();
   }
   
   /**
@@ -168,6 +184,76 @@ public final class TilesetController {
       return palette_controller.getSubpaletteColor(pixel_index);
     } else {
       return null;
+    }
+  }
+  
+  /**
+   * Changes the number of bits per pixel used for the current tileset. If the
+   * number of bits per pixel is different from that of the current tileset,
+   * then the current state of the tileset to be saved for a possible undo and
+   * the current tileset will be reinterpreted to match the new number of bits
+   * per pixel.
+   * 
+   * @param bpp the number of bits per pixel to be used. This should be between
+   *        {@link PaletteController#MIN_BPP} and
+   *        {@link PaletteController#MAX_BPP}.
+   * @throws IllegalArgumentException if bpp is invalid.
+   */
+  public void changeBPP(int bpp) {
+    if (bpp < Tileset.MIN_BPP) {
+      throw new IllegalArgumentException(
+        "Cannot set bpp to value less than " +
+        Integer.toString(Tileset.MIN_BPP) + ".");
+    } else if (bpp > Tileset.MAX_BPP) {
+      throw new IllegalArgumentException(
+        "Cannot set bpp to value more than " +
+        Integer.toString(Tileset.MAX_BPP) + ".");
+    }  // else, we have a legal bpp value
+    
+    if (bpp != getBPP()) {
+      saveForUndo();
+      redo_states_.clear();
+      current_tileset_ = TilesetInterpreter.reinterpretTileset(
+        current_tileset_, bpp, getBitplaneFormat());
+      // change the tileset height to accomodate possible change in # of tiles
+      tileset_height_ = current_tileset_.getNumberOfTiles() / tileset_width_;
+      if (current_tileset_.getNumberOfTiles() % tileset_width_ != 0) {
+        tileset_height_++;
+      }
+    }
+  }
+  
+  /**
+   * Changes the bitplane format to be used by the current tileset. If the
+   * bitplane format is different from that of the current tileset, then the
+   * current state of the tileset to be saved for a possible undo and the
+   * current tileset will be reinterpreted to match the new bitplane format.
+   * 
+   * @param bitplane_format the number denoting the bitplane format to be used.
+   *        This should be one of {@link Tileset#BITPLANE_SERIAL},
+   *        {@link Tileset#BITPLANE_PLANAR}, or
+   *        {@link Tileset#BITPLANE_INTERTWINED}.
+   * @throws IllegalArgumentException if bitplane_format is invalid.
+   */
+  public void changeBitplaneFormat(int bitplane_format) {
+    if (bitplane_format != Tileset.BITPLANE_SERIAL &&
+        bitplane_format != Tileset.BITPLANE_PLANAR &&
+        bitplane_format != Tileset.BITPLANE_INTERTWINED) {
+      throw new IllegalArgumentException(
+        Integer.toString(bitplane_format) +
+        " does not correspond to a valid bitplane format.");
+    }  // else, the bitplane format is valid
+    
+    if (bitplane_format != getBitplaneFormat()) {
+      saveForUndo();
+      redo_states_.clear();
+      current_tileset_ = TilesetInterpreter.reinterpretTileset(
+        current_tileset_, getBPP(), bitplane_format);
+      // change the tileset height to accomodate possible change in # of tiles
+      tileset_height_ = current_tileset_.getNumberOfTiles() / tileset_width_;
+      if (current_tileset_.getNumberOfTiles() % tileset_width_ != 0) {
+        tileset_height_++;
+      }
     }
   }
   
@@ -401,7 +487,6 @@ public final class TilesetController {
   private int tileset_width_;   // number of tiles from left to right
   private int tileset_height_;  // number of tiles from top to bottom
   
-  private int bpp_;
   private boolean stroke_active_;
   private int stroke_index_;
   private int last_stroke_x_;

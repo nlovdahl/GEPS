@@ -64,14 +64,16 @@ public final class MainWindow extends JFrame {
     });
     
     // initialize the controllers and views
-    int initial_bpp = 4;
     int initial_tileset_width = 8;
     int initial_tileset_height = 8;
+    int initial_bpp = 4;
+    int initial_bitplane_format = Tileset.BITPLANE_PLANAR;
     double initial_canvas_scale_factor = 4.0;  // scale by x4
     
     palette_controller_ = new PaletteController(initial_bpp);
     tileset_controller_ = new TilesetController(
-      initial_bpp, initial_tileset_width, initial_tileset_height);
+      initial_tileset_width, initial_tileset_height,
+      initial_bpp, initial_bitplane_format);
     
     palette_view_ = new PaletteView(this, palette_controller_);
     tileset_view_ = new TilesetView(tileset_controller_);
@@ -126,28 +128,46 @@ public final class MainWindow extends JFrame {
     JMenu format_menu = new JMenu("Format");  // format menu initialization...
     JMenu bpp_submenu = new JMenu("Bits per Pixel");
     ButtonGroup bpp_item_group = new ButtonGroup();
-    JRadioButtonMenuItem one_bpp_item = new JRadioButtonMenuItem("1 BPP");
-    bpp_submenu.add(one_bpp_item);
-    bpp_item_group.add(one_bpp_item);
-    one_bpp_item.addActionListener(this::BPPChangeAction);
-    JRadioButtonMenuItem two_bpp_item = new JRadioButtonMenuItem("2 BPP");
-    bpp_submenu.add(two_bpp_item);
-    bpp_item_group.add(two_bpp_item);
-    two_bpp_item.addActionListener(this::BPPChangeAction);
-    JRadioButtonMenuItem three_bpp_item = new JRadioButtonMenuItem("3 BPP");
-    bpp_submenu.add(three_bpp_item);
-    bpp_item_group.add(three_bpp_item);
-    three_bpp_item.addActionListener(this::BPPChangeAction);
-    JRadioButtonMenuItem four_bpp_item = new JRadioButtonMenuItem("4 BPP");
-    bpp_submenu.add(four_bpp_item);
-    bpp_item_group.add(four_bpp_item);
-    four_bpp_item.addActionListener(this::BPPChangeAction);
-    JRadioButtonMenuItem eight_bpp_item = new JRadioButtonMenuItem("8 BPP");
-    bpp_submenu.add(eight_bpp_item);
-    bpp_item_group.add(eight_bpp_item);
-    eight_bpp_item.addActionListener(this::BPPChangeAction);
-    four_bpp_item.setSelected(true);  // begin with 4 bpp by default
+    one_bpp_item_ = new JRadioButtonMenuItem("1 BPP");
+    bpp_submenu.add(one_bpp_item_);
+    bpp_item_group.add(one_bpp_item_);
+    one_bpp_item_.addActionListener(this::BPPChangeAction);
+    two_bpp_item_ = new JRadioButtonMenuItem("2 BPP");
+    bpp_submenu.add(two_bpp_item_);
+    bpp_item_group.add(two_bpp_item_);
+    two_bpp_item_.addActionListener(this::BPPChangeAction);
+    three_bpp_item_ = new JRadioButtonMenuItem("3 BPP");
+    bpp_submenu.add(three_bpp_item_);
+    bpp_item_group.add(three_bpp_item_);
+    three_bpp_item_.addActionListener(this::BPPChangeAction);
+    four_bpp_item_ = new JRadioButtonMenuItem("4 BPP");
+    bpp_submenu.add(four_bpp_item_);
+    bpp_item_group.add(four_bpp_item_);
+    four_bpp_item_.addActionListener(this::BPPChangeAction);
+    eight_bpp_item_ = new JRadioButtonMenuItem("8 BPP");
+    bpp_submenu.add(eight_bpp_item_);
+    bpp_item_group.add(eight_bpp_item_);
+    eight_bpp_item_.addActionListener(this::BPPChangeAction);
     format_menu.add(bpp_submenu);
+    
+    JMenu bitplane_format_submenu = new JMenu("Bitplane Format");
+    ButtonGroup bitplane_format_item_group = new ButtonGroup();
+    serial_bitplane_format_item_ = new JRadioButtonMenuItem("Serial");
+    bitplane_format_submenu.add(serial_bitplane_format_item_);
+    bitplane_format_item_group.add(serial_bitplane_format_item_);
+    serial_bitplane_format_item_.addActionListener(
+      this::BitplaneFormatChangeAction);
+    planar_bitplane_format_item_ = new JRadioButtonMenuItem("Planar");
+    bitplane_format_submenu.add(planar_bitplane_format_item_);
+    bitplane_format_item_group.add(planar_bitplane_format_item_);
+    planar_bitplane_format_item_.addActionListener(
+      this::BitplaneFormatChangeAction);
+    intertwined_bitplane_format_item_ = new JRadioButtonMenuItem("Intertwined");
+    bitplane_format_submenu.add(intertwined_bitplane_format_item_);
+    bitplane_format_item_group.add(intertwined_bitplane_format_item_);
+    intertwined_bitplane_format_item_.addActionListener(
+      this::BitplaneFormatChangeAction);
+    format_menu.add(bitplane_format_submenu);
     
     menu_bar.add(file_menu);
     menu_bar.add(edit_menu);
@@ -184,6 +204,7 @@ public final class MainWindow extends JFrame {
     // update parts of the UI that are updated dynamically
     updateTilesetUndoRedoUI();
     updatePaletteUndoRedoUI();
+    updateFormatUI();
     
     // arrange the layout of the frame's components within the frame
     setLayout(new BorderLayout());
@@ -228,38 +249,44 @@ public final class MainWindow extends JFrame {
   private void TilesetUndoAction(ActionEvent event) {
     if (tileset_controller_.canUndo()) {
       tileset_controller_.undo();
+      updateTilesetUndoRedoUI();
+      updateFormatUI();
+      
       tileset_view_.repaint();  // repaint since things may have changed
       canvas_view_.repaint();
-      updateTilesetUndoRedoUI();
     }
   }
   
   private void TilesetRedoAction(ActionEvent event) {
     if (tileset_controller_.canRedo()) {
       tileset_controller_.redo();
+      updateTilesetUndoRedoUI();
+      updateFormatUI();
+      
       tileset_view_.repaint();  // repaint since things may have changed
       canvas_view_.repaint();
-      updateTilesetUndoRedoUI();
     }
   }
   
   private void PaletteUndoAction(ActionEvent event) {
     if (palette_controller_.canUndo()) {
       palette_controller_.undo();
+      updatePaletteUndoRedoUI();
+      
       palette_view_.repaint();  // repaint since things may have changed
       canvas_view_.repaint();
       tileset_view_.repaint();
-      updatePaletteUndoRedoUI();
     }
   }
   
   private void PaletteRedoAction(ActionEvent event) {
     if (palette_controller_.canRedo()) {
       palette_controller_.redo();
+      updatePaletteUndoRedoUI();
+      
       palette_view_.repaint();  // repaint since things may have changed
       canvas_view_.repaint();
       tileset_view_.repaint();
-      updatePaletteUndoRedoUI();
     }
   }
   
@@ -275,13 +302,43 @@ public final class MainWindow extends JFrame {
     // split and parse the first part of the command, which should be the number
     int bpp = Integer.parseInt(event.getActionCommand().split(" ")[0]);
     // proceed only if the bpp is within a tolerable range
-    if (bpp >= PaletteController.MIN_BPP && bpp <= PaletteController.MAX_BPP) {
+    if (bpp >= Tileset.MIN_BPP && bpp <= Tileset.MAX_BPP) {
       palette_controller_.setBPP(bpp);
-      tileset_controller_.setBPP(bpp);
+      tileset_controller_.changeBPP(bpp);
+      updateTilesetUndoRedoUI();
+      updateFormatUI();
+      
       palette_view_.repaint();  // repaint since things may have changed
       canvas_view_.repaint();
       tileset_view_.repaint();
     }
+  }
+  
+  private void BitplaneFormatChangeAction(ActionEvent event) {
+    // match the text of the chosen format to the corresponding number
+    int bitplane_format;
+    switch (event.getActionCommand()) {
+      case "Serial":
+        bitplane_format = Tileset.BITPLANE_SERIAL;
+        break;
+      case "Planar":
+        bitplane_format = Tileset.BITPLANE_PLANAR;
+        break;
+      case "Intertwined":
+        bitplane_format = Tileset.BITPLANE_INTERTWINED;
+        break;
+      default:
+        throw new IllegalArgumentException(
+          event.getActionCommand() +
+          " is an unrecognized bitplane format action command.");
+    }
+    
+    tileset_controller_.changeBitplaneFormat(bitplane_format);
+    updateTilesetUndoRedoUI();
+    updateFormatUI();
+    
+    canvas_view_.repaint();  // repaint since things may have changed
+    tileset_view_.repaint();
   }
   
   private void TilesetStateChange(PropertyChangeEvent event) {
@@ -308,11 +365,61 @@ public final class MainWindow extends JFrame {
     tileset_redo_menu_item_.setEnabled(tileset_controller_.canRedo());
   }
   
+  private void updateFormatUI() {
+    // match the current bpp to the right JRadioButtonMenuItem
+    switch (tileset_controller_.getBPP()) {
+      case 1:
+        one_bpp_item_.setSelected(true);
+        break;
+      case 2:
+        two_bpp_item_.setSelected(true);
+        break;
+      case 3:
+        three_bpp_item_.setSelected(true);
+        break;
+      case 4:
+        four_bpp_item_.setSelected(true);
+        break;
+      case 8:
+        eight_bpp_item_.setSelected(true);
+        break;
+      default:
+        throw new RuntimeException(
+          Integer.toString(tileset_controller_.getBPP()) +
+          " is an unrecognized bpp menu option.");
+    }
+    
+    // match the current bitplane format to the right JRadioButtonMenuItem
+    switch (tileset_controller_.getBitplaneFormat()) {
+      case Tileset.BITPLANE_SERIAL:
+        serial_bitplane_format_item_.setSelected(true);
+        break;
+      case Tileset.BITPLANE_PLANAR:
+        planar_bitplane_format_item_.setSelected(true);
+        break;
+      case Tileset.BITPLANE_INTERTWINED:
+        intertwined_bitplane_format_item_.setSelected(true);
+        break;
+      default:
+        throw new RuntimeException(
+          Integer.toString(tileset_controller_.getBitplaneFormat()) +
+          " is an unrecognized bitplane format menu option.");
+    }
+  }
+  
   // parts of the UI that need to be accessible to be updated dynamically
   private final JMenuItem tileset_undo_menu_item_;
   private final JMenuItem tileset_redo_menu_item_;
   private final JMenuItem palette_undo_menu_item_;
   private final JMenuItem palette_redo_menu_item_;
+  private final JRadioButtonMenuItem one_bpp_item_;
+  private final JRadioButtonMenuItem two_bpp_item_;
+  private final JRadioButtonMenuItem three_bpp_item_;
+  private final JRadioButtonMenuItem four_bpp_item_;
+  private final JRadioButtonMenuItem eight_bpp_item_;
+  private final JRadioButtonMenuItem serial_bitplane_format_item_;
+  private final JRadioButtonMenuItem planar_bitplane_format_item_;
+  private final JRadioButtonMenuItem intertwined_bitplane_format_item_;
   
   // controllers and views
   private final PaletteController palette_controller_;

@@ -29,33 +29,38 @@ package io.github.nlovdahl.geps;
  */
 public final class Tileset {
   /**
-   * Creates a tileset with the given number of tiles and bits per pixel. The
-   * contents of the tileset are a default (no pattern). A tileset must have at
-   * least one tile a number of bits per pixel between
-   * {@link PaletteController#MAX_BPP} and {@link PaletteController#MIN_BPP}.
+   * Creates a tileset with the given number of tiles, bits per pixel, and
+   * bitplane format. The tileset will only contain pixels with an index of
+   * zero.
    * 
-   * @param tiles the number of 8x8 tiles for the created tileset.
-   * @param bpp the bits per pixel used to select a color in the palette.
+   * @param tiles the number of tiles for the created tileset. This should be
+   *        between one and {@link Tileset#MAX_TILES}.
+   * @param bpp the bits per pixel used to select a color in the palette. This
+   *        should be between {@link #MIN_BPP} and {@link #MAX_BPP}.
+   * @param bitplane_format the number corresponding to a bitplane format for
+   *        the tileset. This should be one of {@link #BITPLANE_SERIAL},
+   *        {@link #BITPLANE_PLANAR}, or {@link #BITPLANE_INTERTWINED}.
    * @throws IllegalArgumentException if the number of tiles is less than 1 or
-   *         if the bits per pixel is not between
-   *         {@link PaletteController#MAX_BPP} and
-   *         {@link PaletteController#MIN_BPP}.
+   *         greater than {@link Tileset#MAX_TILES}, or bpp or bitplane_format
+   *         are invalid.
    */
-  public Tileset(int tiles, int bpp) {
+  public Tileset(int tiles, int bpp, int bitplane_format) {
     if (tiles < 1) {
       throw new IllegalArgumentException("Cannot have less than one tile.");
-    } else if (bpp < PaletteController.MIN_BPP) {
+    } else if (tiles > MAX_TILES) {
       throw new IllegalArgumentException(
-        "Cannot set bpp to value less than " +
-        Integer.toString(PaletteController.MIN_BPP) + ".");
-    } else if (bpp > PaletteController.MAX_BPP) {
+        "Cannot have more than " + Integer.toString(MAX_TILES) + " tiles.");
+    } else if (bpp < MIN_BPP) {
       throw new IllegalArgumentException(
-        "Cannot set bpp to value more than " +
-        Integer.toString(PaletteController.MAX_BPP) + ".");
+        "Cannot set bpp to value less than " + Integer.toString(MIN_BPP) + ".");
+    } else if (bpp > MAX_BPP) {
+      throw new IllegalArgumentException(
+        "Cannot set bpp to value more than " + Integer.toString(MAX_BPP) + ".");
     }  // else, we have legal values
     
     tiles_ = tiles;
     bpp_ = bpp;
+    bitplane_format_ = bitplane_format;
     pixel_indexes_ = new int[tiles][TILE_WIDTH][TILE_HEIGHT];
   }
   
@@ -69,7 +74,8 @@ public final class Tileset {
    * @param tileset the tileset to be copied.
    */
   public Tileset(Tileset tileset) {
-    this(tileset.getNumberOfTiles(), tileset.getBPP());
+    this(tileset.getNumberOfTiles(), tileset.getBPP(),
+         tileset.getBitplaneFormat());
     
     for (int tile = 0; tile < tiles_; tile++) {
       for (int x = 0; x < TILE_WIDTH; x++) {
@@ -93,6 +99,21 @@ public final class Tileset {
    * @return the number of bits per pixel used by the tileset.
    */
   public int getBPP() { return bpp_; }
+  
+  /**
+   * Gets the number denoting which bitplane format should be used for the
+   * tileset.
+   * 
+   * @return the number denoting the tileset's bitplane format.
+   */
+  public int getBitplaneFormat() { return bitplane_format_; }
+  
+  /**
+   * Gets the number of bits per tile needed for the tileset.
+   * 
+   * @return the number of bits per tile needed for the tileset.
+   */
+  public int getBitsPerTile() { return TILE_WIDTH * TILE_HEIGHT * bpp_; }
   
   /**
    * Gets the index for the given coordinates in a specified tile in the
@@ -149,12 +170,48 @@ public final class Tileset {
     pixel_indexes_[tile][x][y] = index;
   }
   
+  /**
+   * Returns the number of bits required to store information for a single tile
+   * using the given number of bits per pixel.
+   * 
+   * @param bpp the bits per pixel used for the tile. This should be between
+   *        {@link #MIN_BPP} and {@link #MAX_BPP}.
+   * @return the number of bits needed to store a single tile.
+   * @throws IllegalArgumentException if bpp is invalid.
+   */
+  public static int bitsPerTile(int bpp) {
+    if (bpp < MIN_BPP) {
+      throw new IllegalArgumentException(
+        "Cannot use bpp less than " + Integer.toString(MIN_BPP) + ".");
+    } else if (bpp > MAX_BPP) {
+      throw new IllegalArgumentException(
+        "Cannot use bpp more than " + Integer.toString(MAX_BPP) + ".");
+    }  // else, bpp is valid
+    
+    return TILE_WIDTH * TILE_HEIGHT * bpp;
+  }
+  
   /** The width in pixels of a single tile. */
   public static final int TILE_WIDTH = 8;
   /** The height in pixels of a single tile. */
   public static final int TILE_HEIGHT = 8;
+  /** The minimum number of bits per pixel. */
+  public static final int MIN_BPP = 1;
+  /** The maximum number of bits per pixel. */
+  public static final int MAX_BPP = 8;
+  /** The largest number of tiles that can be in a tileset. This sould be the
+   greatest number of tiles that can be used alongside {@link #MAX_BPP} without
+   using more bits than the maximum value for an integer. */
+  public static final int MAX_TILES = Integer.MAX_VALUE / bitsPerTile(MAX_BPP);
+  /** The number denoting a serial bitplane format for the tileset. */
+  public static final int BITPLANE_SERIAL = 0;
+  /** The number denoting a planar bitplane format for the tileset. */
+  public static final int BITPLANE_PLANAR = 1;
+  /** The number denoting an intertwined bitplane format for the tileset. */
+  public static final int BITPLANE_INTERTWINED = 2;
   
   private int[][][] pixel_indexes_;  // [tile][row][column]
   private final int tiles_;
   private final int bpp_;
+  private final int bitplane_format_;
 }

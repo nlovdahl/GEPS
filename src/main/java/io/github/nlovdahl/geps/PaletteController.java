@@ -124,12 +124,14 @@ public final class PaletteController {
    *         more than {@link #MAX_BPP}.
    */
   public void setBPP(int bpp) {
-    if (bpp < MIN_BPP) {
+    if (bpp < Tileset.MIN_BPP) {
       throw new IllegalArgumentException(
-        "Cannot set bpp to value less than " + Integer.toString(MIN_BPP) + ".");
-    } else if (bpp > MAX_BPP) {
+        "Cannot set bpp to value less than " +
+        Integer.toString(Tileset.MIN_BPP) + ".");
+    } else if (bpp > Tileset.MAX_BPP) {
       throw new IllegalArgumentException(
-        "Cannot set bpp to value more than " + Integer.toString(MAX_BPP) + ".");
+        "Cannot set bpp to value more than " +
+        Integer.toString(Tileset.MAX_BPP) + ".");
     }  // else, we have a legal bpp value
     
     bpp_ = bpp;
@@ -309,10 +311,6 @@ public final class PaletteController {
     undo_states_.addFirst(new Palette(current_palette_));
   }
   
-  /** The minimum number of bits per pixel. */
-  public static final int MIN_BPP = 1;
-  /** The maximum number of bits per pixel. */
-  public static final int MAX_BPP = 8;
   /** The maximum number of states that will be recorded to be undone. */
   public static final int MAX_UNDOS = 30;
   /** The maximum number of states that will be recorded to be redone. */
