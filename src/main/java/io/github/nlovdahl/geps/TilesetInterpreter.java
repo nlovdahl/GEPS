@@ -108,7 +108,7 @@ public final class TilesetInterpreter {
     for (int bit = 0; bit < num_bits; bit++) {
       // if the bit for the chosen bitplane in the pixel index is 1, encode a 1
       if ((tileset.getPixelIndex(tile, x, y) & (1 << bitplane)) != 0) {
-        tileset_data[bit / 8] |= (1 << (bit % 8));
+        tileset_data[bit / 8] |= (128 >> (bit % 8));
       }  // else, there should be a 0 by default already (so just skip it)
       
       // advance the pixel coordinates and bitplane based on the bitplane format
@@ -199,7 +199,7 @@ public final class TilesetInterpreter {
     // begin decoding each bit we need to
     for (int bit = 0; bit < num_bits; bit++) {
       // if the current bit is 1, set the corresponding bit in the tileset
-      if ((tileset_data[bit / 8] & (1 << (bit % 8))) != 0) {
+      if ((tileset_data[bit / 8] & (128 >> (bit % 8))) != 0) {
         int new_index = tileset.getPixelIndex(tile, x, y) | (1 << bitplane);
         tileset.setPixelIndex(tile, x, y, new_index);
       }  // else, there should be a 0 by default already (so just skip it)
