@@ -16,6 +16,11 @@ GEPS. If not, see <https://www.gnu.org/licenses/>. */
 package io.github.nlovdahl.geps;
 
 import java.awt.Color;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Deque;
 import java.util.LinkedList;
 
@@ -75,13 +80,13 @@ public final class TilesetController {
     }  // else, we have legal values
     
     tileset_width_ = width;
-    tileset_height_ = height;
     
+    stroke_active_ = false;
+    
+    referenced_file_ = null;  // no file is referenced
     current_tileset_ = new Tileset(width * height, bpp, bitplane_format);
     undo_states_ = new LinkedList<>();
     redo_states_ = new LinkedList<>();
-    
-    stroke_active_ = false;
   }
   
   /**
@@ -98,7 +103,15 @@ public final class TilesetController {
    * 
    * @return the number of tiles in the tileset from top to bottom.
    */
-  public int getHeightInTiles() { return tileset_height_; }
+  public int getHeightInTiles() {
+    int tileset_height = current_tileset_.getNumberOfTiles() / tileset_width_;
+    // add on if there are extra tiles (but not enough to fill a row)
+    if (current_tileset_.getNumberOfTiles() % tileset_width_ != 0) {
+      tileset_height++;
+    }
+    
+    return tileset_height;
+  }
   
   /**
    * Gets the width of the tileset in pixels.
@@ -115,7 +128,7 @@ public final class TilesetController {
    * @return the height of the tileset in pixels.
    */
   public int getHeightInPixels() {
-    return tileset_height_ * Tileset.TILE_HEIGHT;
+    return getHeightInTiles() * Tileset.TILE_HEIGHT;
   }
   
   /**
@@ -138,6 +151,14 @@ public final class TilesetController {
   }
   
   /**
+   * Gets the file currentely being referenced by the tileset controller, if
+   * any. If there is no referenced file, then null is returned.
+   * 
+   * @return the currently referenced file if there is one, or null otherwise.
+   */
+  public File getReferencedFile() { return referenced_file_; }
+  
+  /**
    * Gets the index for a color in the palette from a pixel in the tileset.
    * The given coordinates are based from (0, 0) at the top-right and correspond
    * to pixels in the tileset. This method is similar to
@@ -151,15 +172,12 @@ public final class TilesetController {
    *         coordinates do not correspond to a pixel.
    */
   public int getPixelIndex(int x, int y) {
-    if (x < 0 || y < 0 || x >= tileset_width_ * Tileset.TILE_WIDTH ||
-        y >= tileset_height_ * Tileset.TILE_HEIGHT) {
+    if (!isPointInTileset(x, y)) {
       return -1;  // return -1 if outside of the (imaginary) bounding rectangle
     }
+    
     // determine the tile and the insets into that tile
     int tile = getTileNumber(x, y);
-    if (tile >= current_tileset_.getNumberOfTiles()) {
-      return -1;  // return -1 if the tile will be outside of the tileset
-    }  // else, find the coordinates relative to the tile
     x %= Tileset.TILE_WIDTH;
     y %= Tileset.TILE_HEIGHT;
     
@@ -215,11 +233,6 @@ public final class TilesetController {
       redo_states_.clear();
       current_tileset_ = TilesetInterpreter.reinterpretTileset(
         current_tileset_, bpp, getBitplaneFormat());
-      // change the tileset height to accomodate possible change in # of tiles
-      tileset_height_ = current_tileset_.getNumberOfTiles() / tileset_width_;
-      if (current_tileset_.getNumberOfTiles() % tileset_width_ != 0) {
-        tileset_height_++;
-      }
     }
   }
   
@@ -249,11 +262,6 @@ public final class TilesetController {
       redo_states_.clear();
       current_tileset_ = TilesetInterpreter.reinterpretTileset(
         current_tileset_, getBPP(), bitplane_format);
-      // change the tileset height to accomodate possible change in # of tiles
-      tileset_height_ = current_tileset_.getNumberOfTiles() / tileset_width_;
-      if (current_tileset_.getNumberOfTiles() % tileset_width_ != 0) {
-        tileset_height_++;
-      }
     }
   }
   
@@ -334,6 +342,102 @@ public final class TilesetController {
   }
   
   /**
+   * Reads the given file to interpret its data as new tileset and records the
+   * new file referenced. This method will also save the state of the tileset
+   * before changing it for a possible undo. If there is a problem reading the
+   * file, then the tileset will not be altered and the referenced file will not
+   * be changed.
+   * 
+   * @param file the file to load a tileset from.
+   * @return the number of bytes from the file that were not loaded.
+   * @throws NullPointerException if file is null.
+   * @throws FileNotFoundException if file cannot be found and or accessed.
+   * @throws IOException if there is an IO problem reading from the file.
+   */
+  public long loadTileset(File file) throws FileNotFoundException, IOException {
+    if (file == null) {
+      throw new NullPointerException("Cannot load tileset from null file.");
+    }  // there still might be problems, but the file object exists
+    
+    FileInputStream input_stream = null;
+    long file_size = file.length();
+    long bytes_loaded = 0;
+    
+    try {
+      input_stream = new FileInputStream(file);
+      int max_bits = Tileset.MAX_TILES * Tileset.bitsPerTile(getBPP()) / 8;
+      int max_bytes = max_bits / 8;
+      // add a byte if there are leftover bits, but not enough for a whole byte
+      if (max_bits % 8 != 0) { max_bytes++; }
+      // read max_bytes at most and then decode them
+      byte[] tileset_data = input_stream.readNBytes(max_bytes);
+      bytes_loaded = tileset_data.length;
+      
+      Tileset loaded_tileset = TilesetInterpreter.decodeBytes(
+        tileset_data, getBPP(), getBitplaneFormat());
+      
+      saveForUndo();
+      redo_states_.clear();
+      current_tileset_ = loaded_tileset;
+      referenced_file_ = file;
+    } catch (FileNotFoundException file_exception) {
+      throw file_exception;
+    } catch (IOException io_exception) {
+      throw io_exception;
+    } finally {  // no matter what, close the input stream if it exists
+      if (input_stream != null) {
+        try {
+          input_stream.close();
+        } catch (IOException close_exception) {
+          throw close_exception;
+        }
+      }
+    }
+    
+    return file_size - bytes_loaded;  // return how many bytes weren't loaded
+  }
+  
+  /**
+   * Writes the current tileset to the given file and records the new file
+   * referenced. If there is a problem saving to the file, the referenced file
+   * will not be changed. If the given file does not already exist, then it
+   * should be created. Alternatively, if the file already exists, then the
+   * existing file should be overwritten.
+   * 
+   * @param file the file to save the current tileset to.
+   * @throws NullPointerException if file is null.
+   * @throws FileNotFoundException if the file cannot be accessed.
+   * @throws IOException if there is an IO problem writing to the file.
+   */
+  public void saveTileset(File file) throws FileNotFoundException, IOException {
+    if (file == null) {
+      throw new NullPointerException("Cannot save tileset to null file.");
+    }  // there still might be problems, but the file object exists
+    
+    FileOutputStream output_stream = null;
+    
+    try {
+      output_stream = new FileOutputStream(file, false);  // do not append
+      byte[] tileset_data = TilesetInterpreter.encodeTileset(current_tileset_);
+      output_stream.write(tileset_data);
+      
+      referenced_file_ = file;
+    } catch (FileNotFoundException file_exception) {
+      throw file_exception;
+    } catch (IOException io_exception) {
+      throw io_exception;
+    } finally {  // no matter what, close the output stream if it exists
+      if (output_stream != null) {
+        try {
+          output_stream.close();
+        } catch (IOException close_exception) {
+          throw close_exception;
+        }
+      }
+    }
+  }
+  
+  /**
    * Returns whether it is possible to undo - that is, whether it is possible
    * to revert to a previous state for the tileset.
    * 
@@ -408,13 +512,12 @@ public final class TilesetController {
    *         arguments invalid.
    */
   private void setPixelIndex(int x, int y, int index) {
-    // check that the coordinates, tile, and index are valid, respectively
-    if (x < 0 || y < 0 || x >= tileset_width_ * Tileset.TILE_WIDTH ||
-        y >= tileset_height_ * Tileset.TILE_HEIGHT) {
+    // check that the coordinates are valid
+    if (!isPointInTileset(x, y)) {
       throw new IllegalArgumentException(
         "Cannot set index for coordinates (" + Integer.toString(x) + ", " +
         Integer.toString(y) + ").");
-    } // else, the coordinates, the tile, and new index are valid
+    } // else, the coordinates are valid
     
     // find the coordinates relative to the tile
     int tile = getTileNumber(x, y);
@@ -485,13 +588,13 @@ public final class TilesetController {
   public static final int MAX_REDOS = 30;
   
   private int tileset_width_;   // number of tiles from left to right
-  private int tileset_height_;  // number of tiles from top to bottom
   
   private boolean stroke_active_;
   private int stroke_index_;
   private int last_stroke_x_;
   private int last_stroke_y_;
   
+  private File referenced_file_;
   private Tileset current_tileset_;
   private final Deque<Tileset> undo_states_;
   private final Deque<Tileset> redo_states_;

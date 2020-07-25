@@ -34,6 +34,9 @@ import java.awt.BorderLayout;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.ActionEvent;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 
 /**
  * The primary interface through which a user interacts with GEPS. It houses the
@@ -63,6 +66,9 @@ public final class MainWindow extends JFrame {
       }
     });
     
+    // initialize the file chooser (this is the parent)
+    snes_file_chooser_ = new SNESFileChooser(this);
+    
     // initialize the controllers and views
     int initial_tileset_width = 8;
     int initial_tileset_height = 8;
@@ -84,6 +90,16 @@ public final class MainWindow extends JFrame {
     JMenuBar menu_bar = new JMenuBar();
     
     JMenu file_menu = new JMenu("File");  // file menu initialization...
+    JMenuItem open_tileset_menu_item = new JMenuItem("Open Tileset...");
+    open_tileset_menu_item.addActionListener(this::OpenTilesetAction);
+    file_menu.add(open_tileset_menu_item);
+    JMenuItem save_tileset_menu_item = new JMenuItem("Save Tileset");
+    save_tileset_menu_item.addActionListener(this::SaveTilesetAction);
+    file_menu.add(save_tileset_menu_item);
+    JMenuItem save_tileset_as_menu_item = new JMenuItem("Save Tileset As...");
+    save_tileset_as_menu_item.addActionListener(this::SaveTilesetAsAction);
+    file_menu.add(save_tileset_as_menu_item);
+    file_menu.add(new JSeparator());
     JMenuItem exit_menu_item = new JMenuItem("Exit");
     exit_menu_item.addActionListener(this::ExitAction);
     file_menu.add(exit_menu_item);
@@ -244,6 +260,91 @@ public final class MainWindow extends JFrame {
   // methods to handle actions and property change events
   private void ExitAction(ActionEvent event) {
     System.exit(0);
+  }
+  
+  private void OpenTilesetAction(ActionEvent event) {
+    File chosen_file = snes_file_chooser_.chooseTilesetToOpen();
+    
+    if (chosen_file != null) {  // if the user chose a file
+      long bytes_not_loaded = 0;
+      try {
+        bytes_not_loaded = tileset_controller_.loadTileset(chosen_file);
+        
+        updateTilesetUndoRedoUI();
+        
+        tileset_view_.repaint();  // repaint since things may have changed
+        canvas_view_.repaint();
+      } catch (FileNotFoundException file_exception) {
+        JOptionPane.showMessageDialog(
+          this, file_exception.getLocalizedMessage(),
+          "File Not Found Error", JOptionPane.ERROR_MESSAGE);
+      } catch (IOException io_exception) {
+        JOptionPane.showMessageDialog(
+          this, io_exception.getLocalizedMessage(),
+          "IO Error", JOptionPane.ERROR_MESSAGE);
+      }
+      // if there were bytes in the file that were not loaded, warn the user
+      if (bytes_not_loaded != 0) {
+        JOptionPane.showMessageDialog(
+          this, chosen_file.getName() + " was too large. " +
+          Long.toString(bytes_not_loaded) + " bytes were not loaded.",
+          "File Partially Loaded", JOptionPane.WARNING_MESSAGE);
+      }
+    }
+  }
+  
+  private void SaveTilesetAction(ActionEvent event) {
+    File referenced_file = tileset_controller_.getReferencedFile();
+    if (referenced_file != null) {  // if there is a currently referenced file
+      try {
+        tileset_controller_.saveTileset(referenced_file);
+        updateTilesetUndoRedoUI();
+        
+        tileset_view_.repaint();  // repaint since things may have changed
+        canvas_view_.repaint();
+      } catch (FileNotFoundException file_exception) {
+        JOptionPane.showMessageDialog(
+          this, file_exception.getLocalizedMessage(),
+          "File Not Found Error", JOptionPane.ERROR_MESSAGE);
+      } catch (IOException io_exception) {
+        JOptionPane.showMessageDialog(
+          this, io_exception.getLocalizedMessage(),
+          "IO Error", JOptionPane.ERROR_MESSAGE);
+      }
+    } else {  // else, make this a save as action
+      SaveTilesetAsAction(event);
+    }
+  }
+  
+  private void SaveTilesetAsAction(ActionEvent event) {
+    File chosen_file = snes_file_chooser_.chooseTilesetToSave();
+    if (chosen_file != null) {
+      // check if the file exists (and if the user wants to overwrite it if so)
+      if (chosen_file.exists()) {
+        int result = JOptionPane.showConfirmDialog(
+          this, chosen_file.getName() + " already exists.\n" +
+          "Do you want to overwrite it?", "Overwrite File?",
+          JOptionPane.YES_NO_CANCEL_OPTION);
+        // return (do nothing) unless the user confirms they want to overwrite
+        if (result != JOptionPane.YES_OPTION) { return; }
+      }
+      
+      try {
+        tileset_controller_.saveTileset(chosen_file);
+        updateTilesetUndoRedoUI();
+        
+        tileset_view_.repaint();  // repaint since things may have changed
+        canvas_view_.repaint();
+      } catch (FileNotFoundException file_exception) {
+        JOptionPane.showMessageDialog(
+          this, file_exception.getLocalizedMessage(),
+          "File Not Found Error", JOptionPane.ERROR_MESSAGE);
+      } catch (IOException io_exception) {
+        JOptionPane.showMessageDialog(
+          this, io_exception.getLocalizedMessage(),
+          "IO Error", JOptionPane.ERROR_MESSAGE);
+      }
+    }
   }
   
   private void TilesetUndoAction(ActionEvent event) {
@@ -420,6 +521,9 @@ public final class MainWindow extends JFrame {
   private final JRadioButtonMenuItem serial_bitplane_format_item_;
   private final JRadioButtonMenuItem planar_bitplane_format_item_;
   private final JRadioButtonMenuItem intertwined_bitplane_format_item_;
+  
+  // the file chooser used to prompt the user to load and save files
+  private final SNESFileChooser snes_file_chooser_;
   
   // controllers and views
   private final PaletteController palette_controller_;
