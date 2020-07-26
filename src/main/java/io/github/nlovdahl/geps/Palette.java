@@ -32,8 +32,26 @@ public final class Palette {
   /** Creates a palette with a default selection of colors as its entries. */
   public Palette() {
     colors_ = new Color[PALETTE_MAX_SIZE];
-    for (int index = 0; index < PALETTE_MAX_SIZE; index++) {
-      colors_[index] = new Color(255, 0, 0);
+    
+    // fill in some grayscale colors
+    shade_fill(0, 16, 255, 255, 255);
+    setColor(0, 0, 128, 0);  // use a green background to contrast black
+    // fill in different shades of the rainbow (combos of channels)
+    shade_fill(16,  16, 255, 0,   0);
+    shade_fill(32,  16, 255, 128, 0);
+    shade_fill(48,  16, 255, 255, 0);
+    shade_fill(64,  16, 128, 255, 0);
+    shade_fill(80,  16, 0,   255, 0);
+    shade_fill(96,  16, 0,   255, 128);
+    shade_fill(112, 16, 0,   255, 255);
+    shade_fill(128, 16, 0,   128, 255);
+    shade_fill(144, 16, 0,   0,   255);
+    shade_fill(160, 16, 128, 0,   255);
+    shade_fill(176, 16, 255, 0,   255);
+    shade_fill(192, 16, 255, 0,   128);
+    // fill in the remaining entries in the palette with black
+    for (int index = 208; index < colors_.length; index++) {
+      setColor(index, 0, 0, 0);
     }
   }
   
@@ -197,6 +215,52 @@ public final class Palette {
       return Color.BLACK;
     } else {
       return Color.WHITE;
+    }
+  }
+  
+  /**
+   * Fills in a span of the palette from the given start index to the end index
+   * with shades of a given color. The first entry is a dark (but not black) color,
+   * followed by the given color, the given color at half intensity, black, then
+   * increasingly more intense shades of the given color.
+   * <p>
+   * It is assumed that start_index is less than or equal to end_index and that
+   * r, g, and b are valid color channel values.
+   * 
+   * @param start_index the index of the first entry to be filled.
+   * @param length the number of entries, including start_index, to be used.
+   * @param r the red channel's value for the color whose shade will be used.
+   * @param g the green channel's value for the color whose shade will be used.
+   * @param b the blue channel's value for the color whose shade will be used.
+   */
+  private void shade_fill(int start_index, int length, int r, int g, int b) {
+    int index = start_index;
+    int end_index = start_index + length - 1;
+    int r_step = (int) Math.rint(r / 16.0);
+    int g_step = (int) Math.rint(g / 16.0);
+    int b_step = (int) Math.rint(b / 16.0);
+    
+    if (index <= end_index) {
+      setColor(index, 64, 64, 64);
+      index++;
+    }
+    if (index <= end_index) {
+      setColor(index, r, g, b);
+      index++;
+    }
+    if (index <= end_index) {
+      setColor(index, r / 2, g / 2, b / 2);
+      index++;
+    }
+    if (index <= end_index) {
+      setColor(index, 0, 0, 0);
+      index++;
+    }
+    for (index = end_index; index >= start_index + 4; index--) {
+      r -= r_step;
+      g -= g_step;
+      b -= b_step;
+      setColor(index, r, g, b);
     }
   }
   
