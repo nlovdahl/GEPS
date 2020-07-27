@@ -343,10 +343,10 @@ public final class TilesetController {
   
   /**
    * Reads the given file to interpret its data as new tileset and records the
-   * new file referenced. This method will also save the state of the tileset
-   * before changing it for a possible undo. If there is a problem reading the
-   * file, then the tileset will not be altered and the referenced file will not
-   * be changed.
+   * new file referenced. This method will also clear all saved undo and redo
+   * states. If there is a problem reading the file, then the tileset will not
+   * be altered, the undo and redo states will remain, and the referenced file
+   * will not be changed.
    * 
    * @param file the file to load a tileset from.
    * @return the number of bytes from the file that were not loaded.
@@ -376,7 +376,7 @@ public final class TilesetController {
       Tileset loaded_tileset = TilesetInterpreter.decodeBytes(
         tileset_data, getBPP(), getBitplaneFormat());
       
-      saveForUndo();
+      undo_states_.clear();
       redo_states_.clear();
       current_tileset_ = loaded_tileset;
       referenced_file_ = file;
