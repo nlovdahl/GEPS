@@ -236,9 +236,9 @@ public final class Palette {
   private void shade_fill(int start_index, int length, int r, int g, int b) {
     int index = start_index;
     int end_index = start_index + length - 1;
-    int r_step = (int) Math.rint(r / 16.0);
-    int g_step = (int) Math.rint(g / 16.0);
-    int b_step = (int) Math.rint(b / 16.0);
+    int r_step = (int) Math.rint(r / length);
+    int g_step = (int) Math.rint(g / length);
+    int b_step = (int) Math.rint(b / length);
     
     if (index <= end_index) {
       setColor(index, 64, 64, 64);
