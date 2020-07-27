@@ -264,8 +264,9 @@ public final class Palette {
     }
   }
   
-  /** The maximum number of entries that a palette can have. */
-  public static final int PALETTE_MAX_SIZE = 256;
+  /** The maximum number of entries that a palette can have. This number should
+   be a power of two. */
+  public static final int PALETTE_MAX_SIZE = 1 << Tileset.MAX_BPP;  // 2^MAX_BPP
   
   private final Color[] colors_;
 }

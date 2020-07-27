@@ -34,7 +34,7 @@ import java.awt.Point;
 public final class PaletteView extends JTable {
   public PaletteView(JFrame parent_frame,
                      PaletteController palette_controller) {
-    super(16, 16);  // create a table with 16 rows / 16 columns
+    super(PALETTE_TABLE_WIDTH, PALETTE_TABLE_HEIGHT);  // create a table
     setRowSelectionAllowed(false);
     setColumnSelectionAllowed(false);
     setFocusable(false);
@@ -87,7 +87,7 @@ public final class PaletteView extends JTable {
     // get the current color
     int row = rowAtPoint(point);
     int column = columnAtPoint(point);
-    int chosen_index = 16 * row + column;
+    int chosen_index = PALETTE_TABLE_WIDTH * row + column;
     Color old_color = palette_controller_.getColor(chosen_index);
     // allow the user to select a color, starting with the current color
     Color new_color = color_chooser_.chooseColor(old_color);
@@ -119,7 +119,8 @@ public final class PaletteView extends JTable {
    */
   private void changeSelection(Point point) {
     int old_index = palette_controller_.getSubpaletteStartIndex();
-    int chosen_index = 16 * rowAtPoint(point) + columnAtPoint(point);
+    int chosen_index = PALETTE_TABLE_WIDTH * rowAtPoint(point) +
+                       columnAtPoint(point);
     palette_controller_.setSubpalette(chosen_index);
     palette_controller_.setSelectedColor(chosen_index);
     int new_index = palette_controller_.getSubpaletteStartIndex();
@@ -138,7 +139,7 @@ public final class PaletteView extends JTable {
       JLabel cell = (JLabel) super.getTableCellRendererComponent(
           table, value, is_selected, has_focus, row, column);
       // retrieve the corresponding color from the palette controller
-      int index = row * 16 + column;
+      int index = row * PALETTE_TABLE_WIDTH + column;
       Color cell_color = palette_controller_.getColor(index);
       Color contrast_color = Palette.contrastColor(cell_color);
       
@@ -158,19 +159,20 @@ public final class PaletteView extends JTable {
         } else {  // else, draw around the current subpalette (except the edges)
           int top = 0, left = 0, bottom = 0, right = 0;
           // set the border size (to exist) if needed...
-          if (row != 0 &&
-              !palette_controller_.isIndexInSubpalette(index - 16)) {
+          if (row != 0 && !palette_controller_.isIndexInSubpalette(
+                             index - PALETTE_TABLE_WIDTH)) {
             top = BORDER_THICKNESS;
           }
           if (column != 0 &&
               !palette_controller_.isIndexInSubpalette(index - 1)) {
             left = BORDER_THICKNESS;
           }
-          if (row != 15 &&
-              !palette_controller_.isIndexInSubpalette(index + 16)) {
+          if (row != PALETTE_TABLE_HEIGHT - 1 &&
+                     !palette_controller_.isIndexInSubpalette(
+                        index + PALETTE_TABLE_WIDTH)) {
             bottom = BORDER_THICKNESS;
           }
-          if (column != 15 &&
+          if (column != PALETTE_TABLE_WIDTH - 1 &&
               !palette_controller_.isIndexInSubpalette(index + 1)) {
             right = BORDER_THICKNESS;
           }
@@ -199,6 +201,13 @@ public final class PaletteView extends JTable {
    * subpalette itself.
    */
   public static final String NEW_PALETTE_SUBPALETTE = "paletteSubpaletteUpdate";
+  /** The width in cells of the palette table for the view. This number should
+   be a divisor of {@link Palette#PALETTE_MAX_SIZE}. This implicitly means that
+   this number should also be a power of two. */
+  private static final int PALETTE_TABLE_WIDTH = 16;
+  /** The height in cells of the palette table for the view. */
+  private static final int PALETTE_TABLE_HEIGHT =
+    Palette.PALETTE_MAX_SIZE / PALETTE_TABLE_WIDTH;
   
   private final PaletteController palette_controller_;
   private final SNESColorChooser color_chooser_;

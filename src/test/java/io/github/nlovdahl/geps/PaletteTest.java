@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
@@ -439,6 +440,23 @@ public class PaletteTest {
                          Palette.contrastColor(new Color(0x0000FF)),
                          "Expected white contrast with blue.")
     );
+  }
+  
+  /**
+   * {@link Palette#PALETTE_MAX_SIZE} should be a power of two and should also
+   * be at least large enough to store all of the colors that could be addressed
+   * using {@link Tileset#MAX_BPP} bits per pixel.
+   */
+  @Test
+  public void testMaxPaletteSize() {
+    assertTrue(Palette.PALETTE_MAX_SIZE > 0,
+               "PALETTE_MAX_SIZE should be at least 0.");
+    assertTrue(Integer.bitCount(Palette.PALETTE_MAX_SIZE) == 1,
+               "PALETTE_MAX_SIZE should be a power of 2.");
+    int min_palette_max_size = 1 << Tileset.MAX_BPP;
+    assertTrue(Palette.PALETTE_MAX_SIZE >= min_palette_max_size,
+               "PALETTE_MAX_SIZE needs to be able to hold at least " +
+               Integer.toString(min_palette_max_size) + " entries.");
   }
   
   /**
