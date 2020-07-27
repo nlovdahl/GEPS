@@ -127,12 +127,12 @@ public final class Palette {
     int g = color.getGreen();
     int b = color.getBlue();
     int snes_code = 0;
-    // shift and pack the RGB components into 0RRRRRGG GGGBBBBB
-    snes_code = snes_code | (r >> 3);
+    // shift and pack the RGB components into BGR555 (0BBB BBGG GGGR RRRR)
+    snes_code = snes_code | (b >> 3);
     snes_code = snes_code << 5;
     snes_code = snes_code | (g >> 3);
     snes_code = snes_code << 5;
-    snes_code = snes_code | (b >> 3);
+    snes_code = snes_code | (r >> 3);
     
     return snes_code;
   }

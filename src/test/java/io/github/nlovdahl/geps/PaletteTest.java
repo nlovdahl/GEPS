@@ -337,16 +337,16 @@ public class PaletteTest {
     assertAll(
       () -> assertEquals(0x0000, Palette.getSNESColorCode(new Color(0x000000))),
       () -> assertEquals(0x7FFF, Palette.getSNESColorCode(new Color(0xFFFFFF))),
-      () -> assertEquals(0x7C00, Palette.getSNESColorCode(new Color(0xFF0000))),
+      () -> assertEquals(0x001F, Palette.getSNESColorCode(new Color(0xFF0000))),
       () -> assertEquals(0x03E0, Palette.getSNESColorCode(new Color(0x00FF00))),
-      () -> assertEquals(0x001F, Palette.getSNESColorCode(new Color(0x0000FF))),
+      () -> assertEquals(0x7C00, Palette.getSNESColorCode(new Color(0x0000FF))),
       () -> assertEquals(0x7FFF, Palette.getSNESColorCode(new Color(0xF8F8F8))),
-      () -> assertEquals(0x7C00, Palette.getSNESColorCode(new Color(0xF80000))),
+      () -> assertEquals(0x001F, Palette.getSNESColorCode(new Color(0xF80000))),
       () -> assertEquals(0x03E0, Palette.getSNESColorCode(new Color(0x00F800))),
-      () -> assertEquals(0x001F, Palette.getSNESColorCode(new Color(0x0000F8))),
-      () -> assertEquals(0x0D87, Palette.getSNESColorCode(new Color(0x1F6639))),
-      () -> assertEquals(0x67BE, Palette.getSNESColorCode(new Color(0xC9EDF3))),
-      () -> assertEquals(0x59F3, Palette.getSNESColorCode(new Color(0xB57C9F)))
+      () -> assertEquals(0x7C00, Palette.getSNESColorCode(new Color(0x0000F8))),
+      () -> assertEquals(0x1D83, Palette.getSNESColorCode(new Color(0x1F6639))),
+      () -> assertEquals(0x7BB9, Palette.getSNESColorCode(new Color(0xC9EDF3))),
+      () -> assertEquals(0x4DF6, Palette.getSNESColorCode(new Color(0xB57C9F)))
     );
   }
   
@@ -375,25 +375,25 @@ public class PaletteTest {
                          Palette.getSNESColorCodeString(new Color(0x000000))),
       () -> assertEquals("0x7FFF",
                          Palette.getSNESColorCodeString(new Color(0xFFFFFF))),
-      () -> assertEquals("0x7C00",
+      () -> assertEquals("0x001F",
                          Palette.getSNESColorCodeString(new Color(0xFF0000))),
       () -> assertEquals("0x03E0",
                          Palette.getSNESColorCodeString(new Color(0x00FF00))),
-      () -> assertEquals("0x001F",
+      () -> assertEquals("0x7C00",
                          Palette.getSNESColorCodeString(new Color(0x0000FF))),
       () -> assertEquals("0x7FFF",
                          Palette.getSNESColorCodeString(new Color(0xF8F8F8))),
-      () -> assertEquals("0x7C00",
+      () -> assertEquals("0x001F",
                          Palette.getSNESColorCodeString(new Color(0xF80000))),
       () -> assertEquals("0x03E0",
                          Palette.getSNESColorCodeString(new Color(0x00F800))),
-      () -> assertEquals("0x001F",
+      () -> assertEquals("0x7C00",
                          Palette.getSNESColorCodeString(new Color(0x0000F8))),
-      () -> assertEquals("0x0D87",
+      () -> assertEquals("0x1D83",
                          Palette.getSNESColorCodeString(new Color(0x1F6639))),
-      () -> assertEquals("0x67BE",
+      () -> assertEquals("0x7BB9",
                          Palette.getSNESColorCodeString(new Color(0xC9EDF3))),
-      () -> assertEquals("0x59F3",
+      () -> assertEquals("0x4DF6",
                          Palette.getSNESColorCodeString(new Color(0xB57C9F)))
     );
   }
