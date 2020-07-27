@@ -151,7 +151,7 @@ public final class TilesetController {
   }
   
   /**
-   * Gets the file currentely being referenced by the tileset controller, if
+   * Gets the file currently being referenced by the tileset controller, if
    * any. If there is no referenced file, then null is returned.
    * 
    * @return the currently referenced file if there is one, or null otherwise.
