@@ -16,9 +16,9 @@ GEPS. If not, see <https://www.gnu.org/licenses/>. */
 package io.github.nlovdahl.geps;
 
 /**
- * A collection of methods which can be used to create new tilesets. This is
- * useful for interpreting raw data to turn into a tileset, or to reinterpret a
- * tileset using a different format.
+ * A collection of methods which can be used to transform and create tilesets.
+ * A tileset can be reinterpreted into a different format, or a tileset could be
+ * encoded into binary data or decoded from binary data.
  * 
  * @author Nicholas Lovdahl
  * 
