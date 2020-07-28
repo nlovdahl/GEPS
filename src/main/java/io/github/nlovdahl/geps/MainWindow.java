@@ -73,7 +73,7 @@ public final class MainWindow extends JFrame {
     int initial_tileset_height = 8;
     int initial_bpp = 4;
     int initial_bitplane_format = Tileset.BITPLANE_PLANAR;
-    double initial_canvas_scale_factor = 4.0;  // scale by x4
+    int initial_canvas_scale_factor = 4;  // scale by x4
     
     palette_controller_ = new PaletteController(initial_bpp);
     tileset_controller_ = new TilesetController(
@@ -495,8 +495,7 @@ public final class MainWindow extends JFrame {
   
   private void CanvasZoomChangeAction(ActionEvent event) {
     // parse the command, except the first character, which should be the number
-    double scale_factor = Double.parseDouble(
-      event.getActionCommand().substring(1));
+    int scale_factor = Integer.parseInt(event.getActionCommand().substring(1));
     canvas_view_.setScaleFactor(scale_factor);
     canvas_view_.repaint();  // repaint the canvas with the new scaling factor
   }

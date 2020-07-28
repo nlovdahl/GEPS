@@ -41,16 +41,16 @@ import java.awt.Point;
  */
 public final class CanvasView extends JPanel implements Scrollable {
   public CanvasView(TilesetController tileset_controller,
-                    PaletteController palette_controller, double scale_factor) {
+                    PaletteController palette_controller, int scale_factor) {
     if (tileset_controller == null) {
       throw new NullPointerException(
         "Cannot create canvas view with null tileset controller.");
     } else if (palette_controller == null) {
       throw new NullPointerException(
         "Cannot create canvas view with null palette controller.");
-    } else if (scale_factor <= 0) {
+    } else if (scale_factor < 1) {
       throw new IllegalArgumentException(
-        "Cannot have a scale factor less than or equal to zero.");
+        "Cannot have a scale factor less than one.");
     } // else, we should have a good palette controller to pair with
     tileset_controller_ = tileset_controller;
     palette_controller_ = palette_controller;
@@ -98,20 +98,19 @@ public final class CanvasView extends JPanel implements Scrollable {
    * 
    * @return the factor for the canvas.
    */
-  public double getScaleFactor() { return canvas_scale_factor_; }
+  public int getScaleFactor() { return canvas_scale_factor_; }
   
   /**
    * Sets the scaling factor for the canvas to the given value.
    * 
    * @param scale_factor the new factor to scale the canvas by.
-   * @throws IllegalArgumentException if the new factor is less than or equal to
-   *         zero.
+   * @throws IllegalArgumentException if the new factor is less than one.
    */
-  public void setScaleFactor(double scale_factor) {
-    if (scale_factor <= 0) {
+  public void setScaleFactor(int scale_factor) {
+    if (scale_factor < 1) {
       throw new IllegalArgumentException(
-        "Scale factor must be greater than zero.");
-    }  // else, the scale factor should be valud
+        "Scale factor must be at least one.");
+    }  // else, the scale factor should be valid
     
     canvas_scale_factor_ = scale_factor;
   }
@@ -155,8 +154,8 @@ public final class CanvasView extends JPanel implements Scrollable {
     // convert coordinates to pixels in the tileset and pass them on
     int mouse_x = point.x;
     int mouse_y = point.y;
-    int tileset_x = (int) Math.rint(mouse_x / canvas_scale_factor_);
-    int tileset_y = (int) Math.rint(mouse_y / canvas_scale_factor_);
+    int tileset_x = mouse_x / canvas_scale_factor_;
+    int tileset_y = mouse_y / canvas_scale_factor_;
     
     tileset_controller_.beginStroke(
       tileset_x, tileset_y,
@@ -169,8 +168,8 @@ public final class CanvasView extends JPanel implements Scrollable {
     // convert coordinates to pixels in the tileset and pass them on
     int mouse_x = point.x;
     int mouse_y = point.y;
-    int tileset_x = (int) Math.rint(mouse_x / canvas_scale_factor_);
-    int tileset_y = (int) Math.rint(mouse_y / canvas_scale_factor_);
+    int tileset_x = mouse_x / canvas_scale_factor_;
+    int tileset_y = mouse_y / canvas_scale_factor_;
     
     tileset_controller_.addToStroke(tileset_x, tileset_y);
       
@@ -181,8 +180,8 @@ public final class CanvasView extends JPanel implements Scrollable {
     // convert coordinates to pixels in the tileset and pass them on
     int mouse_x = point.x;
     int mouse_y = point.y;
-    int tileset_x = (int) Math.rint(mouse_x / canvas_scale_factor_);
-    int tileset_y = (int) Math.rint(mouse_y / canvas_scale_factor_);
+    int tileset_x = mouse_x / canvas_scale_factor_;
+    int tileset_y = mouse_y / canvas_scale_factor_;
     
     tileset_controller_.endStroke(tileset_x, tileset_y);
     
@@ -228,7 +227,7 @@ public final class CanvasView extends JPanel implements Scrollable {
    */
   public static final String NEW_CANVAS_STATE = "canvasStateUpdate";
   
-  private double canvas_scale_factor_;
+  private int canvas_scale_factor_;
   private BufferedImage canvas_image_;
   private Dimension canvas_image_size_;
   
