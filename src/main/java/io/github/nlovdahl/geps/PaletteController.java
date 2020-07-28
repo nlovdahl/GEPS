@@ -39,6 +39,7 @@ public final class PaletteController {
     subpalette_start_index_ = 0;
     
     referenced_file_ = null;
+    unsaved_changes_ = false;
     current_palette_ = new Palette();
     undo_states_ = new LinkedList<>();
     redo_states_ = new LinkedList<>();
@@ -91,6 +92,7 @@ public final class PaletteController {
   public void setColor(int index, int r, int g, int b) {
     saveForUndo();
     redo_states_.clear();
+    unsaved_changes_ = true;
     
     current_palette_.setColor(index, r, g, b);  // should be clamped in Palette
   }
@@ -107,6 +109,7 @@ public final class PaletteController {
   public void setColor(int index, Color color) {
     saveForUndo();
     redo_states_.clear();
+    unsaved_changes_ = true;
     
     current_palette_.setColor(index, color);  // should be clamped in Palette
   }
@@ -196,6 +199,15 @@ public final class PaletteController {
    * @return the currently referenced file if there is one, or null otherwise.
    */
   public File getReferencedFile() { return referenced_file_; }
+  
+  /**
+   * Returns whether or not there are unsaved changes to the palette. This will
+   * not change for changes which do not actually alter the contents of the
+   * palette, such as changing the subpalette.
+   * 
+   * @return true if there are unsaved changes to the palette, false otherwise.
+   */
+  public boolean isModified() { return unsaved_changes_; }
   
   /**
    * Takes an index for an entry in the palette and returns whether or not that
@@ -307,6 +319,7 @@ public final class PaletteController {
       redo_states_.clear();
       current_palette_ = loaded_palette;
       referenced_file_ = file;
+      unsaved_changes_ = false;
     } catch (FileNotFoundException file_exception) {
       throw file_exception;
     } catch (IOException io_exception) {
@@ -349,6 +362,7 @@ public final class PaletteController {
       output_stream.write(palette_data);
       
       referenced_file_ = file;
+      unsaved_changes_ = false;
     } catch (FileNotFoundException file_exception) {
       throw file_exception;
     } catch (IOException io_exception) {
@@ -427,6 +441,7 @@ public final class PaletteController {
   private int selected_color_index_;
   
   private File referenced_file_;
+  private boolean unsaved_changes_;
   private Palette current_palette_;
   private final Deque<Palette> undo_states_;
   private final Deque<Palette> redo_states_;

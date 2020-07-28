@@ -84,6 +84,7 @@ public final class TilesetController {
     stroke_active_ = false;
     
     referenced_file_ = null;  // no file is referenced
+    unsaved_changes_ = false;
     current_tileset_ = new Tileset(width * height, bpp, bitplane_format);
     undo_states_ = new LinkedList<>();
     redo_states_ = new LinkedList<>();
@@ -159,6 +160,15 @@ public final class TilesetController {
   public File getReferencedFile() { return referenced_file_; }
   
   /**
+   * Returns whether or not there are unsaved changes to the tileset. This will
+   * not change for changes which do not actually alter the contents of the
+   * tileset, such as changing the width of the tileset.
+   * 
+   * @return true if there are unsaved changes to the tileset, false otherwise.
+   */
+  public boolean isModified() { return unsaved_changes_; }
+  
+  /**
    * Gets the index for a color in the palette from a pixel in the tileset.
    * The given coordinates are based from (0, 0) at the top-right and correspond
    * to pixels in the tileset. This method is similar to
@@ -231,6 +241,7 @@ public final class TilesetController {
     if (bpp != getBPP()) {
       saveForUndo();
       redo_states_.clear();
+      unsaved_changes_ = true;
       current_tileset_ = TilesetInterpreter.reinterpretTileset(
         current_tileset_, bpp, getBitplaneFormat());
     }
@@ -260,6 +271,7 @@ public final class TilesetController {
     if (bitplane_format != getBitplaneFormat()) {
       saveForUndo();
       redo_states_.clear();
+      unsaved_changes_ = true;
       current_tileset_ = TilesetInterpreter.reinterpretTileset(
         current_tileset_, getBPP(), bitplane_format);
     }
@@ -380,6 +392,7 @@ public final class TilesetController {
       redo_states_.clear();
       current_tileset_ = loaded_tileset;
       referenced_file_ = file;
+      unsaved_changes_ = false;
     } catch (FileNotFoundException file_exception) {
       throw file_exception;
     } catch (IOException io_exception) {
@@ -422,6 +435,7 @@ public final class TilesetController {
       output_stream.write(tileset_data);
       
       referenced_file_ = file;
+      unsaved_changes_ = false;
     } catch (FileNotFoundException file_exception) {
       throw file_exception;
     } catch (IOException io_exception) {
@@ -525,6 +539,7 @@ public final class TilesetController {
     y %= Tileset.TILE_HEIGHT;
     
     current_tileset_.setPixelIndex(tile, x, y, index);
+    unsaved_changes_ = true;
   }
   
   // determine whether a given point will be in the tileset (is is valid?)
@@ -595,6 +610,7 @@ public final class TilesetController {
   private int last_stroke_y_;
   
   private File referenced_file_;
+  private boolean unsaved_changes_;
   private Tileset current_tileset_;
   private final Deque<Tileset> undo_states_;
   private final Deque<Tileset> redo_states_;

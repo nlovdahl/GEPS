@@ -52,7 +52,6 @@ public final class MainWindow extends JFrame {
    * to the appropriate methods.
    */
   public MainWindow() {
-    super("GEPS");
     // set properties for the frame / main window itself
     setLocationByPlatform(true);
     
@@ -228,6 +227,7 @@ public final class MainWindow extends JFrame {
     });
     
     // update parts of the UI that are updated dynamically
+    updateTitle();
     updateTilesetUndoRedoUI();
     updatePaletteUndoRedoUI();
     updateFormatUI();
@@ -280,6 +280,7 @@ public final class MainWindow extends JFrame {
       try {
         bytes_not_loaded = tileset_controller_.loadTileset(chosen_file);
         
+        updateTitle();
         updateTilesetUndoRedoUI();
         
         tileset_view_.repaint();  // repaint since things may have changed
@@ -341,6 +342,7 @@ public final class MainWindow extends JFrame {
       
       try {
         tileset_controller_.saveTileset(chosen_file);
+        updateTitle();
         updateTilesetUndoRedoUI();
         
         tileset_view_.repaint();  // repaint since things may have changed
@@ -365,6 +367,7 @@ public final class MainWindow extends JFrame {
       try {
         bytes_not_loaded = palette_controller_.loadPalette(chosen_file);
         
+        updateTitle();
         updatePaletteUndoRedoUI();
         
         palette_view_.repaint();  // repaint since things may have changed
@@ -428,6 +431,7 @@ public final class MainWindow extends JFrame {
       
       try {
         palette_controller_.savePalette(chosen_file);
+        updateTitle();
         updatePaletteUndoRedoUI();
         
         palette_view_.repaint();  // repaint since things may have changed
@@ -504,6 +508,7 @@ public final class MainWindow extends JFrame {
     if (bpp >= Tileset.MIN_BPP && bpp <= Tileset.MAX_BPP) {
       palette_controller_.setBPP(bpp);
       tileset_controller_.changeBPP(bpp);
+      updateTitle();
       updateTilesetUndoRedoUI();
       updateFormatUI();
       
@@ -533,6 +538,7 @@ public final class MainWindow extends JFrame {
     }
     
     tileset_controller_.changeBitplaneFormat(bitplane_format);
+    updateTitle();
     updateTilesetUndoRedoUI();
     updateFormatUI();
     
@@ -541,10 +547,12 @@ public final class MainWindow extends JFrame {
   }
   
   private void TilesetStateChange(PropertyChangeEvent event) {
+    updateTitle();
     updateTilesetUndoRedoUI();
   }
   
   private void PaletteStateChange(PropertyChangeEvent event) {
+    updateTitle();
     updatePaletteUndoRedoUI();
   }
   
@@ -554,6 +562,33 @@ public final class MainWindow extends JFrame {
   }
   
   // methods to dynamically update the UI
+  private void updateTitle() {
+    File tileset_file = tileset_controller_.getReferencedFile();
+    String tileset_filename;
+    if (tileset_file == null) {  // if there is no currently referenced file
+      tileset_filename = "[Untitled Tileset]";
+    } else {
+      tileset_filename = tileset_file.getAbsolutePath();
+    }
+    if (tileset_controller_.isModified()) {
+      tileset_filename = "*" + tileset_filename;
+    }
+    
+    
+    File palette_file = palette_controller_.getReferencedFile();
+    String palette_filename;
+    if (palette_file == null) {  // if there is no currently referenced file
+      palette_filename = "[Untitled Palette]";
+    } else {
+      palette_filename = palette_file.getAbsolutePath();
+    }
+    if (palette_controller_.isModified()) {  // add a star for unsaved changes
+      palette_filename = "*" + palette_filename;
+    }
+    
+    setTitle("GEPS - " + tileset_filename + " | " + palette_filename);
+  }
+  
   private void updatePaletteUndoRedoUI() {
     palette_undo_menu_item_.setEnabled(palette_controller_.canUndo());
     palette_redo_menu_item_.setEnabled(palette_controller_.canRedo());
