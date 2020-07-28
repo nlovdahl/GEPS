@@ -63,6 +63,7 @@ public final class SNESFileChooser extends JFileChooser {
    * @return the tileset file chosen, or null if no selection was made.
    */
   public File chooseTilesetToOpen() {
+    resetChoosableFileFilters();
     setFileFilter(TILESET_FILE_FILTER);
     
     return chooseFileToOpen();
@@ -77,6 +78,7 @@ public final class SNESFileChooser extends JFileChooser {
    * @return the tileset file chosen, or null if no selection was made.
    */
   public File chooseTilesetToSave() {
+    resetChoosableFileFilters();
     setFileFilter(TILESET_FILE_FILTER);
     base_extension = CHR_EXTENSION;
     
@@ -92,6 +94,7 @@ public final class SNESFileChooser extends JFileChooser {
    * @return the palette file chosen, or null if no selection was made.
    */
   public File choosePaletteToOpen() {
+    resetChoosableFileFilters();
     setFileFilter(PALETTE_FILE_FILTER);
     
     return chooseFileToOpen();
@@ -106,6 +109,7 @@ public final class SNESFileChooser extends JFileChooser {
    * @return the palette file chosen, or null if no selection was made.
    */
   public File choosePaletteToSave() {
+    resetChoosableFileFilters();
     setFileFilter(PALETTE_FILE_FILTER);
     base_extension = PAL_EXTENSION;
     
