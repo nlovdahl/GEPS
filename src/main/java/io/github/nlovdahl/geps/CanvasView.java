@@ -21,6 +21,7 @@ import javax.swing.SwingConstants;
 import java.awt.Rectangle;
 import java.awt.Graphics;
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
 import java.awt.geom.AffineTransform;
@@ -68,10 +69,18 @@ public final class CanvasView extends JPanel implements Scrollable {
           endStroke(event.getPoint());
         }
       }
+      // change the cursor to crosshairs if it enters the canvas
+      @Override
+      public void mouseEntered(MouseEvent event) {
+        setCursor(new Cursor(Cursor.CROSSHAIR_CURSOR));
+      }
+      // return the cursor to default when it leaves the canvas
+      @Override
+      public void mouseExited(MouseEvent event) {
+        setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+      }
       // do nothing for other situations
       @Override public void mouseClicked(MouseEvent event) {}
-      @Override public void mouseEntered(MouseEvent event) {}
-      @Override public void mouseExited(MouseEvent event) {}
     });
     addMouseMotionListener(new MouseMotionListener() {
       @Override public void mouseDragged(MouseEvent event) {
