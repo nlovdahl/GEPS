@@ -568,9 +568,9 @@ public final class MainWindow extends JFrame {
       tileset_filename = "[Untitled Tileset]";
     } else {
       tileset_filename = tileset_file.getAbsolutePath();
-    }
-    if (tileset_controller_.isModified()) {
-      tileset_filename = "*" + tileset_filename;
+      if (tileset_controller_.isModified()) {  // add a star for unsaved changes
+        tileset_filename = "*" + tileset_filename;
+      }
     }
     
     
@@ -580,9 +580,9 @@ public final class MainWindow extends JFrame {
       palette_filename = "[Untitled Palette]";
     } else {
       palette_filename = palette_file.getAbsolutePath();
-    }
-    if (palette_controller_.isModified()) {  // add a star for unsaved changes
-      palette_filename = "*" + palette_filename;
+      if (palette_controller_.isModified()) {  // add a star for unsaved changes
+        palette_filename = "*" + palette_filename;
+      }
     }
     
     setTitle("GEPS - " + tileset_filename + " | " + palette_filename);
