@@ -100,6 +100,16 @@ public final class MainWindow extends JFrame {
     save_tileset_as_menu_item.addActionListener(this::SaveTilesetAsAction);
     file_menu.add(save_tileset_as_menu_item);
     file_menu.add(new JSeparator());
+    JMenuItem open_palette_menu_item = new JMenuItem("Open Palette...");
+    open_palette_menu_item.addActionListener(this::OpenPaletteAction);
+    file_menu.add(open_palette_menu_item);
+    JMenuItem save_palette_menu_item = new JMenuItem("Save Palette");
+    save_palette_menu_item.addActionListener(this::SavePaletteAction);
+    file_menu.add(save_palette_menu_item);
+    JMenuItem save_palette_as_menu_item = new JMenuItem("Save Palette As...");
+    save_palette_as_menu_item.addActionListener(this::SavePaletteAsAction);
+    file_menu.add(save_palette_as_menu_item);
+    file_menu.add(new JSeparator());
     JMenuItem exit_menu_item = new JMenuItem("Exit");
     exit_menu_item.addActionListener(this::ExitAction);
     file_menu.add(exit_menu_item);
@@ -334,6 +344,94 @@ public final class MainWindow extends JFrame {
         updateTilesetUndoRedoUI();
         
         tileset_view_.repaint();  // repaint since things may have changed
+        canvas_view_.repaint();
+      } catch (FileNotFoundException file_exception) {
+        JOptionPane.showMessageDialog(
+          this, file_exception.getLocalizedMessage(),
+          "File Not Found Error", JOptionPane.ERROR_MESSAGE);
+      } catch (IOException io_exception) {
+        JOptionPane.showMessageDialog(
+          this, io_exception.getLocalizedMessage(),
+          "IO Error", JOptionPane.ERROR_MESSAGE);
+      }
+    }
+  }
+  
+  private void OpenPaletteAction(ActionEvent event) {
+    File chosen_file = snes_file_chooser_.choosePaletteToOpen();
+    
+    if (chosen_file != null) {  // if the user chose a file
+      long bytes_not_loaded = 0;
+      try {
+        bytes_not_loaded = palette_controller_.loadPalette(chosen_file);
+        
+        updatePaletteUndoRedoUI();
+        
+        palette_view_.repaint();  // repaint since things may have changed
+        tileset_view_.repaint();
+        canvas_view_.repaint();
+      } catch (FileNotFoundException file_exception) {
+        JOptionPane.showMessageDialog(
+          this, file_exception.getLocalizedMessage(),
+          "File Not Found Error", JOptionPane.ERROR_MESSAGE);
+      } catch (IOException io_exception) {
+        JOptionPane.showMessageDialog(
+          this, io_exception.getLocalizedMessage(),
+          "IO Error", JOptionPane.ERROR_MESSAGE);
+      }
+      // if there were bytes in the file that were not loaded, warn the user
+      if (bytes_not_loaded != 0) {
+        JOptionPane.showMessageDialog(
+          this, chosen_file.getName() + " was too large. " +
+          Long.toString(bytes_not_loaded) + " bytes were not loaded.",
+          "File Partially Loaded", JOptionPane.WARNING_MESSAGE);
+      }
+    }
+  }
+  
+  private void SavePaletteAction(ActionEvent event) {
+    File referenced_file = palette_controller_.getReferencedFile();
+    if (referenced_file != null) {  // if there is a currently referenced file
+      try {
+        palette_controller_.savePalette(referenced_file);
+        updatePaletteUndoRedoUI();
+        
+        palette_view_.repaint();  // repaint since things may have changed
+        tileset_view_.repaint();
+        canvas_view_.repaint();
+      } catch (FileNotFoundException file_exception) {
+        JOptionPane.showMessageDialog(
+          this, file_exception.getLocalizedMessage(),
+          "File Not Found Error", JOptionPane.ERROR_MESSAGE);
+      } catch (IOException io_exception) {
+        JOptionPane.showMessageDialog(
+          this, io_exception.getLocalizedMessage(),
+          "IO Error", JOptionPane.ERROR_MESSAGE);
+      }
+    } else {  // else, make this a save as action
+      SavePaletteAsAction(event);
+    }
+  }
+  
+  private void SavePaletteAsAction(ActionEvent event) {
+    File chosen_file = snes_file_chooser_.choosePaletteToSave();
+    if (chosen_file != null) {
+      // check if the file exists (and if the user wants to overwrite it if so)
+      if (chosen_file.exists()) {
+        int result = JOptionPane.showConfirmDialog(
+          this, chosen_file.getName() + " already exists.\n" +
+          "Do you want to overwrite it?", "Overwrite File?",
+          JOptionPane.YES_NO_CANCEL_OPTION);
+        // return (do nothing) unless the user confirms they want to overwrite
+        if (result != JOptionPane.YES_OPTION) { return; }
+      }
+      
+      try {
+        palette_controller_.savePalette(chosen_file);
+        updatePaletteUndoRedoUI();
+        
+        palette_view_.repaint();  // repaint since things may have changed
+        tileset_view_.repaint();
         canvas_view_.repaint();
       } catch (FileNotFoundException file_exception) {
         JOptionPane.showMessageDialog(

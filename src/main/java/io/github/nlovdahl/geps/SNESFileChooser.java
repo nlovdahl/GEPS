@@ -136,10 +136,10 @@ public final class SNESFileChooser extends JFileChooser {
       
       // if the file has no extension, add the current base extension
       if (chosen_file_extension_index == -1) {
-        chosen_file = new File(chosen_file_name + base_extension);
+        chosen_file = new File(chosen_file + base_extension);
       } else if (chosen_file_extension_index == chosen_file_name.length() - 1) {
         // if the file ends with a dot, add the extension (minus the dot)
-        chosen_file = new File(chosen_file_name + base_extension.substring(1));
+        chosen_file = new File(chosen_file + base_extension.substring(1));
       }
     }
     
