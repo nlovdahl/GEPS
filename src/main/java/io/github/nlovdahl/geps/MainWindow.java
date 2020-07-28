@@ -147,6 +147,14 @@ public final class MainWindow extends JFrame {
     canvas_zoom_submenu.add(canvas_zoom_8_item);
     canvas_zoom_item_group.add(canvas_zoom_8_item);
     canvas_zoom_8_item.addActionListener(this::CanvasZoomChangeAction);
+    JRadioButtonMenuItem canvas_zoom_16_item = new JRadioButtonMenuItem("x16");
+    canvas_zoom_submenu.add(canvas_zoom_16_item);
+    canvas_zoom_item_group.add(canvas_zoom_16_item);
+    canvas_zoom_16_item.addActionListener(this::CanvasZoomChangeAction);
+    JRadioButtonMenuItem canvas_zoom_32_item = new JRadioButtonMenuItem("x32");
+    canvas_zoom_submenu.add(canvas_zoom_32_item);
+    canvas_zoom_item_group.add(canvas_zoom_32_item);
+    canvas_zoom_32_item.addActionListener(this::CanvasZoomChangeAction);
     canvas_zoom_4_item.setSelected(true);  // begin with x4 zoom by default
     view_menu.add(canvas_zoom_submenu);
     
