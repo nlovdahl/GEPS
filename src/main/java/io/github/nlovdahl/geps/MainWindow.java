@@ -202,10 +202,16 @@ public final class MainWindow extends JFrame {
       this::BitplaneFormatChangeAction);
     format_menu.add(bitplane_format_submenu);
     
+    JMenu help_menu = new JMenu("Help");
+    JMenuItem about_menu_item = new JMenuItem("About");
+    about_menu_item.addActionListener(this::AboutAction);
+    help_menu.add(about_menu_item);
+    
     menu_bar.add(file_menu);
     menu_bar.add(edit_menu);
     menu_bar.add(view_menu);
     menu_bar.add(format_menu);
+    menu_bar.add(help_menu);
     setJMenuBar(menu_bar);
     
     // setup the scroll panes for the tileset, canvas, and palette
@@ -551,6 +557,10 @@ public final class MainWindow extends JFrame {
     
     canvas_view_.repaint();  // repaint since things may have changed
     tileset_view_.repaint();
+  }
+  
+  private void AboutAction(ActionEvent event) {
+    new AboutWindow(this).setVisible(true);
   }
   
   private void TilesetStateChange(PropertyChangeEvent event) {
