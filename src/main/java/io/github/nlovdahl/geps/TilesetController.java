@@ -241,7 +241,6 @@ public final class TilesetController {
     if (bpp != getBPP()) {
       saveForUndo();
       redo_states_.clear();
-      unsaved_changes_ = true;
       current_tileset_ = TilesetInterpreter.reinterpretTileset(
         current_tileset_, bpp, getBitplaneFormat());
     }
@@ -271,7 +270,6 @@ public final class TilesetController {
     if (bitplane_format != getBitplaneFormat()) {
       saveForUndo();
       redo_states_.clear();
-      unsaved_changes_ = true;
       current_tileset_ = TilesetInterpreter.reinterpretTileset(
         current_tileset_, getBPP(), bitplane_format);
     }
@@ -538,8 +536,11 @@ public final class TilesetController {
     x %= Tileset.TILE_WIDTH;
     y %= Tileset.TILE_HEIGHT;
     
-    current_tileset_.setPixelIndex(tile, x, y, index);
-    unsaved_changes_ = true;
+    // only make a change if it would be meaningful
+    if (index != current_tileset_.getPixelIndex(tile, x, y)) {
+      current_tileset_.setPixelIndex(tile, x, y, index);
+      unsaved_changes_ = true;
+    }
   }
   
   // determine whether a given point will be in the tileset (is is valid?)
