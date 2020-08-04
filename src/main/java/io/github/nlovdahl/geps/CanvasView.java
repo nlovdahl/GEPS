@@ -24,8 +24,6 @@ import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
-import java.awt.geom.AffineTransform;
-import java.awt.image.AffineTransformOp;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseEvent;
@@ -33,13 +31,26 @@ import java.awt.Point;
 
 /**
  * A view for the canvas, a subpart of the tileset through which the user makes
- * changes.
+ * changes. A canvas is scrollable with a unit increment the size of one pixel
+ * in the tileset and a block increment the size of an entire tile.
  * 
  * @author Nicholas Lovdahl
  * 
  * @see TilesetView
  */
 public final class CanvasView extends JPanel implements Scrollable {
+  /**
+   * Creates a view for the canvas using the tileset and palette from the given
+   * controllers. This new view is scaled by the scale factor given, although
+   * this can be changed later.
+   * 
+   * @param tileset_controller the controller for the tileset to use.
+   * @param palette_controller the controller for the palette to use.
+   * @param scale_factor the factor to scale the canvas by.
+   * @throws NullPointerException if tileset_controller or palette_controller
+   *         are null.
+   * @throws IllegalArgumentException if scale_factor is less than one.
+   */
   public CanvasView(TilesetController tileset_controller,
                     PaletteController palette_controller, int scale_factor) {
     if (tileset_controller == null) {
@@ -52,10 +63,14 @@ public final class CanvasView extends JPanel implements Scrollable {
       throw new IllegalArgumentException(
         "Cannot have a scale factor less than one.");
     } // else, we should have a good palette controller to pair with
+    
     tileset_controller_ = tileset_controller;
     palette_controller_ = palette_controller;
-    canvas_scale_factor_ = scale_factor;
+    scale_factor_ = scale_factor;
     
+    checkDimensions();  // this will setup the base image and dimensions
+    
+    // setup listeners for when the user interacts with the canvas
     addMouseListener(new MouseListener() {
       @Override public void mousePressed(MouseEvent event) {
         // if the left mouse button (button 1) is pressed
@@ -82,6 +97,7 @@ public final class CanvasView extends JPanel implements Scrollable {
       // do nothing for other situations
       @Override public void mouseClicked(MouseEvent event) {}
     });
+    
     addMouseMotionListener(new MouseMotionListener() {
       @Override public void mouseDragged(MouseEvent event) {
         addToStroke(event.getPoint());
@@ -89,22 +105,20 @@ public final class CanvasView extends JPanel implements Scrollable {
       // do nothing for other situations
       @Override public void mouseMoved(MouseEvent event) {}
     });
-    
-    redrawCanvasImage();
   }
   
   /**
    * Gets the scaling factor for the canvas.
    * 
-   * @return the factor for the canvas.
+   * @return the scaling factor for the canvas.
    */
-  public int getScaleFactor() { return canvas_scale_factor_; }
+  public int getScaleFactor() { return scale_factor_; }
   
   /**
    * Sets the scaling factor for the canvas to the given value.
    * 
    * @param scale_factor the new factor to scale the canvas by.
-   * @throws IllegalArgumentException if the new factor is less than one.
+   * @throws IllegalArgumentException if scale_factor is less than one.
    */
   public void setScaleFactor(int scale_factor) {
     if (scale_factor < 1) {
@@ -112,29 +126,59 @@ public final class CanvasView extends JPanel implements Scrollable {
         "Scale factor must be at least one.");
     }  // else, the scale factor should be valid
     
-    canvas_scale_factor_ = scale_factor;
+    scale_factor_ = scale_factor;
   }
   
   @Override
   public void paintComponent(Graphics graphics) {
     super.paintComponent(graphics);
     
-    redrawCanvasImage();
-    graphics.drawImage(canvas_image_, 0, 0, null);
+    checkDimensions();
+    
+    // update the area of the base image which will be contained in the clip
+    Rectangle clipArea = graphics.getClipBounds();
+    if (clipArea != null) {  // if there is a clip area
+      /* overshoot the tileset area corresponding to the clip to avoid missing
+      any straddled tileset pixels */
+      int tileset_x_min = Math.max(clipArea.x / scale_factor_ - 1, 0);
+      int tileset_y_min = Math.max(clipArea.y / scale_factor_ - 1, 0);
+      int tileset_x_max =
+        Math.min((clipArea.x + clipArea.width) / scale_factor_ + 1,
+                 tileset_controller_.getWidthInPixels());
+      int tileset_y_max =
+        Math.min((clipArea.y + clipArea.height) / scale_factor_ + 1,
+                 tileset_controller_.getHeightInPixels());
+      
+      for (int y = tileset_y_min; y < tileset_y_max; y++) {
+        for (int x = tileset_x_min; x < tileset_x_max; x++) {
+          Color pixel_color = tileset_controller_.getPixelColor(
+                                x, y, palette_controller_);
+          if (pixel_color != null) {  // use the color if coordinates are valid
+            base_image_.setRGB(x, y, pixel_color.getRGB());
+          } else {  // else, draw a transparent color (no tileset here)
+            base_image_.setRGB(x, y, 0);
+          }
+        }
+      }
+    }
+    
+    // finally, draw the image while scaling it on the fly
+    graphics.drawImage(base_image_, 0, 0, scaled_image_size_.width,
+                       scaled_image_size_.height, getBackground(), null);
   }
   
   @Override
   public Dimension getPreferredScrollableViewportSize() {
-    return canvas_image_size_;
+    return scaled_image_size_;
   }
   
   @Override
   public int getScrollableBlockIncrement(Rectangle visibleRect,
                                          int orientation, int direction) {
     if (orientation == SwingConstants.VERTICAL) {
-      return (int) canvas_scale_factor_ * Tileset.TILE_HEIGHT;
+      return scale_factor_ * Tileset.TILE_HEIGHT;
     } else {  // else, the orientation must be horizontal
-      return (int) canvas_scale_factor_ * Tileset.TILE_WIDTH;
+      return scale_factor_ * Tileset.TILE_WIDTH;
     }
   }
   
@@ -147,78 +191,105 @@ public final class CanvasView extends JPanel implements Scrollable {
   @Override
   public int getScrollableUnitIncrement(Rectangle visibleRect,
                                         int orientation, int direction) {
-    return (int) canvas_scale_factor_;
+    return scale_factor_;
   }
   
   private void beginStroke(Point point) {
     // convert coordinates to pixels in the tileset and pass them on
     int mouse_x = point.x;
     int mouse_y = point.y;
-    int tileset_x = mouse_x / canvas_scale_factor_;
-    int tileset_y = mouse_y / canvas_scale_factor_;
+    int tileset_x = mouse_x / scale_factor_;
+    int tileset_y = mouse_y / scale_factor_;
     
     tileset_controller_.beginStroke(
       tileset_x, tileset_y,
       palette_controller_.getSelectedColorSubpaletteIndex());
     
-    repaint();
+    // just paint the one pixel by setting the last tileset coordinates first
+    last_tileset_x_ = tileset_x;
+    last_tileset_y_ = tileset_y;
+    repaintTilesetArea(tileset_x, tileset_y);
   }
   
   private void addToStroke(Point point) {
     // convert coordinates to pixels in the tileset and pass them on
     int mouse_x = point.x;
     int mouse_y = point.y;
-    int tileset_x = mouse_x / canvas_scale_factor_;
-    int tileset_y = mouse_y / canvas_scale_factor_;
+    int tileset_x = mouse_x / scale_factor_;
+    int tileset_y = mouse_y / scale_factor_;
     
     tileset_controller_.addToStroke(tileset_x, tileset_y);
-      
-    repaint();
+    
+    repaintTilesetArea(tileset_x, tileset_y);
+    
+    last_tileset_x_ = tileset_x;
+    last_tileset_y_ = tileset_y;
   }
   
   private void endStroke(Point point) {
     // convert coordinates to pixels in the tileset and pass them on
     int mouse_x = point.x;
     int mouse_y = point.y;
-    int tileset_x = mouse_x / canvas_scale_factor_;
-    int tileset_y = mouse_y / canvas_scale_factor_;
+    int tileset_x = mouse_x / scale_factor_;
+    int tileset_y = mouse_y / scale_factor_;
     
     tileset_controller_.endStroke(tileset_x, tileset_y);
     
-    repaint();
+    repaintTilesetArea(tileset_x, tileset_y);
+    
+    last_tileset_x_ = tileset_x;
+    last_tileset_y_ = tileset_y;
     
     // fire a property change event just in case the state has been changed
     firePropertyChange(NEW_CANVAS_STATE, null, null);
   }
   
-  private void redrawCanvasImage() {
-    BufferedImage base_image = new BufferedImage(
-      tileset_controller_.getWidthInPixels(),
-      tileset_controller_.getHeightInPixels(),
-      BufferedImage.TYPE_INT_ARGB);
+  /**
+   * Repaints an area of the base image corresponding to the rectangular area
+   * between the given tileset coordinates and the last ones. This method does
+   * not change the last tileset coordinates used.
+   * 
+   * @param new_x the horizontal component of the new tileset coordinates.
+   * @param new_y the vertical component of the new tileset coordinates.
+   */
+  private void repaintTilesetArea(int new_x, int new_y) {
+    int scaled_image_x_min =
+      Math.min(new_x, last_tileset_x_) * scale_factor_ - 1;
+    int scaled_image_y_min =
+      Math.min(new_y, last_tileset_y_) * scale_factor_ - 1;
+    int scaled_image_x_max =
+      (Math.max(new_x, last_tileset_x_) + 1) * scale_factor_ + 1;
+    int scaled_image_y_max =
+      (Math.max(new_y, last_tileset_y_) + 1) * scale_factor_ + 1;
     
-    for (int x = 0; x < base_image.getWidth(); x++) {
-      for (int y = 0; y < base_image.getHeight(); y++) {
-        Color pixel_color = tileset_controller_.getPixelColor(
-          x, y, palette_controller_);
-        if (pixel_color != null) {  // use the color if coordinates are valid
-          base_image.setRGB(x, y, pixel_color.getRGB());
-        } else {  // else, draw a transparent color (no tileset here)
-          base_image.setRGB(x, y, 0);
-        }
-      }
+    repaint(scaled_image_x_min, scaled_image_y_min,
+            scaled_image_x_max - scaled_image_x_min,
+            scaled_image_y_max - scaled_image_y_min);
+  }
+  
+  private void checkDimensions() {
+    if (base_image_ == null ||
+        tileset_controller_.getWidthInPixels() != base_image_.getWidth() ||
+        tileset_controller_.getHeightInPixels() != base_image_.getHeight()) {
+      base_image_ = new BufferedImage(tileset_controller_.getWidthInPixels(),
+                                      tileset_controller_.getHeightInPixels(),
+                                      BufferedImage.TYPE_INT_ARGB);
+      // if this is triggered, then the dimensions (up next) will be changed too
     }
     
-    AffineTransform scaler = new AffineTransform();
-    scaler.scale(canvas_scale_factor_, canvas_scale_factor_);
-    AffineTransformOp scale_op = new AffineTransformOp(
-      scaler, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
+    int correct_width =
+      tileset_controller_.getWidthInPixels() * scale_factor_;
+    int correct_height =
+      tileset_controller_.getHeightInPixels() * scale_factor_;
     
-    canvas_image_ = scale_op.filter(base_image, null);
-    canvas_image_size_ = new Dimension(canvas_image_.getWidth(),
-                                       canvas_image_.getHeight());
-    setPreferredSize(canvas_image_size_);
-    revalidate();  // the new area will be 'dirty', repaint it all
+    if (scaled_image_size_ == null ||
+        correct_width != scaled_image_size_.width ||
+        correct_height != scaled_image_size_.height) {
+      scaled_image_size_ = new Dimension(correct_width, correct_height);
+      // correct the size of the canvas and declare it 'dirty' (repaint it all)
+      setPreferredSize(scaled_image_size_);
+      revalidate();
+    }
   }
   
   /**
@@ -227,9 +298,12 @@ public final class CanvasView extends JPanel implements Scrollable {
    */
   public static final String NEW_CANVAS_STATE = "canvasStateUpdate";
   
-  private int canvas_scale_factor_;
-  private BufferedImage canvas_image_;
-  private Dimension canvas_image_size_;
+  private int last_tileset_x_;
+  private int last_tileset_y_;
+  
+  private BufferedImage base_image_;
+  private int scale_factor_;
+  private Dimension scaled_image_size_;
   
   private final TilesetController tileset_controller_;
   private final PaletteController palette_controller_;

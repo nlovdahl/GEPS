@@ -133,6 +133,14 @@ public final class TilesetController {
   }
   
   /**
+   * Gets the number of tiles in the tileset. This method is a wrapper for
+   * {@link Tileset#getNumberOfTiles()} method.
+   * 
+   * @return the number of tiles in the current tileset.
+   */
+  public int getNumberOfTiles() { return current_tileset_.getNumberOfTiles(); }
+  
+  /**
    * Gets the number of bits per pixel being used for the current tileset. This
    * method is a wrapper for the {@link Tileset#getBPP()} method.
    * 
