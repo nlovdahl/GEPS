@@ -226,9 +226,8 @@ public final class TilesetController {
   /**
    * Changes the number of bits per pixel used for the current tileset. If the
    * number of bits per pixel is different from that of the current tileset,
-   * then the current state of the tileset to be saved for a possible undo and
-   * the current tileset will be reinterpreted to match the new number of bits
-   * per pixel.
+   * then the current tileset will be reinterpreted to match the new number of
+   * bits per pixel.
    * 
    * @param bpp the number of bits per pixel to be used. This should be between
    *        {@link PaletteController#MIN_BPP} and
@@ -247,8 +246,6 @@ public final class TilesetController {
     }  // else, we have a legal bpp value
     
     if (bpp != getBPP()) {
-      saveForUndo();
-      redo_states_.clear();
       current_tileset_ = TilesetInterpreter.reinterpretTileset(
         current_tileset_, bpp, getBitplaneFormat());
     }
@@ -257,7 +254,6 @@ public final class TilesetController {
   /**
    * Changes the bitplane format to be used by the current tileset. If the
    * bitplane format is different from that of the current tileset, then the
-   * current state of the tileset to be saved for a possible undo and the
    * current tileset will be reinterpreted to match the new bitplane format.
    * 
    * @param bitplane_format the number denoting the bitplane format to be used.
@@ -276,8 +272,6 @@ public final class TilesetController {
     }  // else, the bitplane format is valid
     
     if (bitplane_format != getBitplaneFormat()) {
-      saveForUndo();
-      redo_states_.clear();
       current_tileset_ = TilesetInterpreter.reinterpretTileset(
         current_tileset_, getBPP(), bitplane_format);
     }
@@ -483,8 +477,9 @@ public final class TilesetController {
       // if we hit the cap for redos, pop the oldest one before proceeding
       if (redo_states_.size() >= MAX_REDOS) { redo_states_.removeLast(); }
       // save the current state for a possible redo and restore the latest undo
-      redo_states_.addFirst(current_tileset_);
-      current_tileset_ = undo_states_.removeFirst();
+      redo_states_.addFirst(TilesetInterpreter.encodeTileset(current_tileset_));
+      current_tileset_ = TilesetInterpreter.decodeBytes(
+        undo_states_.removeFirst(), getBPP(), getBitplaneFormat());
     }  // else, there is nothing to undo...
   }
   
@@ -497,9 +492,10 @@ public final class TilesetController {
     if (canRedo()) {
       // if we hit the cap for undos, pop the oldest one before proceeding
       if (undo_states_.size() >= MAX_UNDOS) { undo_states_.removeLast(); }
-      // push the current palette to the undos and pop the first redo palette
-      undo_states_.addFirst(current_tileset_);
-      current_tileset_ = redo_states_.removeFirst();
+      // push the current tileset to the undos and pop the first redo palette
+      undo_states_.addFirst(TilesetInterpreter.encodeTileset(current_tileset_));
+      current_tileset_ = TilesetInterpreter.decodeBytes(
+        redo_states_.removeFirst(), getBPP(), getBitplaneFormat());
     }  // else, there is nothing to redo
   }
   
@@ -507,8 +503,8 @@ public final class TilesetController {
   private void saveForUndo() {
     // if we hit the cap for undos, pop the oldest one before proceeding
     if (undo_states_.size() >= MAX_UNDOS) { undo_states_.removeLast(); }
-    // make a copy of the palette in its current state and save it
-    undo_states_.addFirst(new Tileset(current_tileset_));
+    // make a copy of the tileset in its current state and save it
+    undo_states_.addFirst(TilesetInterpreter.encodeTileset(current_tileset_));
   }
   
   // gets the index number for a tile for given coordinates in the tileset
@@ -621,6 +617,6 @@ public final class TilesetController {
   private File referenced_file_;
   private boolean unsaved_changes_;
   private Tileset current_tileset_;
-  private final Deque<Tileset> undo_states_;
-  private final Deque<Tileset> redo_states_;
+  private final Deque<byte[]> undo_states_;
+  private final Deque<byte[]> redo_states_;
 }
