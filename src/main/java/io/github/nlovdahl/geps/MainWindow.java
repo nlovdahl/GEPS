@@ -297,8 +297,7 @@ public final class MainWindow extends JFrame {
         updateTitle();
         updateTilesetUndoRedoUI();
         
-        tileset_view_.repaint();  // repaint since things may have changed
-        canvas_view_.repaint();
+        repaintTileset();  // repaint since things may have changed
       } catch (FileNotFoundException file_exception) {
         JOptionPane.showMessageDialog(
           this, file_exception.getLocalizedMessage(),
@@ -323,10 +322,6 @@ public final class MainWindow extends JFrame {
     if (referenced_file != null) {  // if there is a currently referenced file
       try {
         tileset_controller_.saveTileset(referenced_file);
-        updateTilesetUndoRedoUI();
-        
-        tileset_view_.repaint();  // repaint since things may have changed
-        canvas_view_.repaint();
       } catch (FileNotFoundException file_exception) {
         JOptionPane.showMessageDialog(
           this, file_exception.getLocalizedMessage(),
@@ -357,10 +352,6 @@ public final class MainWindow extends JFrame {
       try {
         tileset_controller_.saveTileset(chosen_file);
         updateTitle();
-        updateTilesetUndoRedoUI();
-        
-        tileset_view_.repaint();  // repaint since things may have changed
-        canvas_view_.repaint();
       } catch (FileNotFoundException file_exception) {
         JOptionPane.showMessageDialog(
           this, file_exception.getLocalizedMessage(),
@@ -384,9 +375,7 @@ public final class MainWindow extends JFrame {
         updateTitle();
         updatePaletteUndoRedoUI();
         
-        palette_view_.repaint();  // repaint since things may have changed
-        tileset_view_.repaint();
-        canvas_view_.repaint();
+        repaintAll();  // repaint since things may have changed
       } catch (FileNotFoundException file_exception) {
         JOptionPane.showMessageDialog(
           this, file_exception.getLocalizedMessage(),
@@ -411,11 +400,6 @@ public final class MainWindow extends JFrame {
     if (referenced_file != null) {  // if there is a currently referenced file
       try {
         palette_controller_.savePalette(referenced_file);
-        updatePaletteUndoRedoUI();
-        
-        palette_view_.repaint();  // repaint since things may have changed
-        tileset_view_.repaint();
-        canvas_view_.repaint();
       } catch (FileNotFoundException file_exception) {
         JOptionPane.showMessageDialog(
           this, file_exception.getLocalizedMessage(),
@@ -446,11 +430,6 @@ public final class MainWindow extends JFrame {
       try {
         palette_controller_.savePalette(chosen_file);
         updateTitle();
-        updatePaletteUndoRedoUI();
-        
-        palette_view_.repaint();  // repaint since things may have changed
-        tileset_view_.repaint();
-        canvas_view_.repaint();
       } catch (FileNotFoundException file_exception) {
         JOptionPane.showMessageDialog(
           this, file_exception.getLocalizedMessage(),
@@ -469,8 +448,7 @@ public final class MainWindow extends JFrame {
       updateTilesetUndoRedoUI();
       updateFormatUI();
       
-      tileset_view_.repaint();  // repaint since things may have changed
-      canvas_view_.repaint();
+      repaintTileset();  // repaint since things may have changed
     }
   }
   
@@ -480,8 +458,7 @@ public final class MainWindow extends JFrame {
       updateTilesetUndoRedoUI();
       updateFormatUI();
       
-      tileset_view_.repaint();  // repaint since things may have changed
-      canvas_view_.repaint();
+      repaintTileset();  // repaint since things may have changed
     }
   }
   
@@ -490,9 +467,7 @@ public final class MainWindow extends JFrame {
       palette_controller_.undo();
       updatePaletteUndoRedoUI();
       
-      palette_view_.repaint();  // repaint since things may have changed
-      canvas_view_.repaint();
-      tileset_view_.repaint();
+      repaintAll();  // repaint since things may have changed
     }
   }
   
@@ -501,9 +476,7 @@ public final class MainWindow extends JFrame {
       palette_controller_.redo();
       updatePaletteUndoRedoUI();
       
-      palette_view_.repaint();  // repaint since things may have changed
-      canvas_view_.repaint();
-      tileset_view_.repaint();
+      repaintAll();  // repaint since things may have changed]
     }
   }
   
@@ -525,9 +498,7 @@ public final class MainWindow extends JFrame {
       updateTilesetUndoRedoUI();
       updateFormatUI();
       
-      palette_view_.repaint();  // repaint since things may have changed
-      canvas_view_.repaint();
-      tileset_view_.repaint();
+      repaintAll();  // repaint since things may have changed
     }
   }
   
@@ -555,8 +526,7 @@ public final class MainWindow extends JFrame {
     updateTilesetUndoRedoUI();
     updateFormatUI();
     
-    canvas_view_.repaint();  // repaint since things may have changed
-    tileset_view_.repaint();
+    repaintTileset();  // repaint since things may have changed
   }
   
   private void AboutAction(ActionEvent event) {
@@ -574,11 +544,20 @@ public final class MainWindow extends JFrame {
   }
   
   private void PaletteSubpaletteChange(PropertyChangeEvent event) {
+    repaintTileset();
+  }
+  
+  // methods to dynamically update the UI
+  private void repaintAll() {
+    palette_view_.repaint();
+    repaintTileset();
+  }
+  
+  private void repaintTileset() {
     canvas_view_.repaint();
     tileset_view_.repaint();
   }
   
-  // methods to dynamically update the UI
   private void updateTitle() {
     File tileset_file = tileset_controller_.getReferencedFile();
     String tileset_filename;
@@ -590,7 +569,6 @@ public final class MainWindow extends JFrame {
         tileset_filename = "*" + tileset_filename;
       }
     }
-    
     
     File palette_file = palette_controller_.getReferencedFile();
     String palette_filename;
