@@ -24,8 +24,8 @@ import java.io.File;
  * A file chooser interface which allows a user to navigate the file system and
  * select either a tileset file or a palette file. This is provided through the
  * invocation of methods to select either type of file, respectively. In any
-   * case, it is possible to select from any files to open or save to, and only
-   * a single file may be chosen.
+ * case, it is possible to select from any files to open or save to, and only a
+ * single file may be chosen.
  * 
  * @author Nicholas Lovdahl
  * 
