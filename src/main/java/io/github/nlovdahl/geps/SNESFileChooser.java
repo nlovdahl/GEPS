@@ -21,33 +21,28 @@ import java.awt.Component;
 import java.io.File;
 
 /**
- * A file chooser interface which allows a user to navigate the file system and
- * select either a tileset file or a palette file. This is provided through the
- * invocation of methods to select either type of file, respectively. In any
- * case, it is possible to select from any files to open or save to, and only a
- * single file may be chosen.
+ * Provides a file chooser interface which allows a user to navigate the file
+ * system and select either tileset or palette files. When making selections,
+ * only a single file can be selected; the user may use file filters for only
+ * tileset or palette files, or may make a selection from all files. The file
+ * chooser keeps track of the last tileset and palette files selected by the
+ * user as referenced files.
  * 
  * @author Nicholas Lovdahl
- * 
- * @see Tileset
- * @see Palette
  */
 public final class SNESFileChooser extends JFileChooser {
   /**
    * Creates a file chooser which can be used to pick tileset or palette files
-   * to open or save to. The parent of this file chooser is set to be the given
-   * component.
+   * to open or save to. The new file chooser begins without any referenced
+   * tileset or palette files.
    * 
    * @param parent the component that owns the file chooser.
-   * @throws NullPointerException if parent is null.
    */
   public SNESFileChooser(Component parent) {
-    if (parent == null) {
-      throw new NullPointerException(
-        "Cannot create SNES File Chooser will a null parent.");
-    }  // else, the parent should be valid
-    
     parent_ = parent;
+    
+    referenced_tileset_file_ = null;  // no referenced files to begin with
+    referenced_palette_file_ = null;
     
     setAcceptAllFileFilterUsed(true);
     setMultiSelectionEnabled(false);
@@ -55,65 +50,183 @@ public final class SNESFileChooser extends JFileChooser {
   }
   
   /**
-   * Prompts the user to select a tileset file to be opened. The user will be
-   * able to see and select files ending with the associated tileset file
-   * extension by default, although they may chose any file regardless of its
-   * extension. If the selection process is aborted, null is returned.
+   * Gets the currently referenced tileset file. If there is no currently
+   * referenced tileset file, then null is returned instead.
    * 
-   * @return the tileset file chosen, or null if no selection was made.
+   * @return the currently referenced tileset file, or null is there is not one.
    */
-  public File chooseTilesetToOpen() {
+  public File getReferencedTilesetFile() { return referenced_tileset_file_; }
+  
+  /**
+   * Returns the name of the currently referenced tileset file, or
+   * {@link #DEFAULT_TILESET_FILE_NAME} if there is no currently referenced
+   * tileset file.
+   * 
+   * @return the path for the current tileset file.
+   */
+  public String getReferencedTilesetFileShortName() {
+    if (referenced_tileset_file_ != null) {
+      return referenced_tileset_file_.getName();
+    } else {
+      return DEFAULT_TILESET_FILE_NAME;
+    }
+  }
+  
+  /**
+   * Returns the absolute path of the currently referenced tileset file, or
+   * {@link #DEFAULT_TILESET_FILE_NAME} if there is no currently referenced
+   * tileset file.
+   * 
+   * @return the path for the current tileset file.
+   */
+  public String getReferencedTilesetFileLongName() {
+    if (referenced_tileset_file_ != null) {
+      return referenced_tileset_file_.getAbsolutePath();
+    } else {
+      return DEFAULT_TILESET_FILE_NAME;
+    }
+  }
+  
+  /**
+   * Resets the tileset file currently referenced; after calling this method,
+   * there will be no referenced tileset file.
+   */
+  public void resetReferencedTilesetFile() { referenced_tileset_file_ = null; }
+  
+  /**
+   * Gets the currently referenced palette file. If there is no currently
+   * referenced palette file, then null is returned instead.
+   * 
+   * @return the currently referenced palette file, or null is there is not one.
+   */
+  public File getReferencedPaletteFile() { return referenced_palette_file_; }
+  
+  /**
+   * Returns the name of the currently referenced palette file, or
+   * {@link #DEFAULT_PALETTE_FILE_NAME} if there is no currently referenced
+   * palette file.
+   * 
+   * @return the path for the current palette file.
+   */
+  public String getReferencedPaletteFileShortName() {
+    if (referenced_palette_file_ != null) {
+      return referenced_palette_file_.getName();
+    } else {
+      return DEFAULT_PALETTE_FILE_NAME;
+    }
+  }
+  
+  /**
+   * Returns the absolute path of the currently referenced palette file, or
+   * {@link #DEFAULT_PALETTE_FILE_NAME} if there is no currently referenced
+   * palette file.
+   * 
+   * @return the path for the current palette file.
+   */
+  public String getReferencedPaletteFileLongName() {
+    if (referenced_palette_file_ != null) {
+      return referenced_palette_file_.getAbsolutePath();
+    } else {
+      return DEFAULT_PALETTE_FILE_NAME;
+    }
+  }
+  
+  /**
+   * Resets the palette file currently referenced; after calling this method,
+   * there will be no referenced palette file.
+   */
+  public void resetReferencedPaletteFile() { referenced_palette_file_ = null; }
+  
+  /**
+   * Prompts the user to select a tileset file through a file chooser using the
+   * dialog for opening a file and returns the file selected. If the user aborts
+   * the selection process, the referenced file is not changed and null is
+   * returned instead. This method only changes the currently referenced tileset
+   * file. It does not read or write to the chosen file.
+   * 
+   * @return true if the user makes a selection, false if the selection process
+   *         was aborted.
+   */
+  public File selectTilesetFileToOpen() {
     resetChoosableFileFilters();
     setFileFilter(TILESET_FILE_FILTER);
+    File chosen_file = chooseFileToOpen();
     
-    return chooseFileToOpen();
+    // if the user made a selection (not null)
+    if (chosen_file != null) {
+      referenced_tileset_file_ = chosen_file;
+    }
+    
+    return chosen_file;
   }
   
   /**
-   * Prompts the user to select a tileset file to be save to. The user will be
-   * able to see and select files ending with the associated tileset file
-   * extension by default, although they may chose any file regardless of its
-   * extension. If the selection process is aborted, null is returned.
+   * Prompts the user to select a tileset file through a file chooser using the
+   * dialog for saving a file and returns the file selected. If the user aborts
+   * the selection process, the referenced file is not changed and null is
+   * returned instead. This method only changes the currently referenced tileset
+   * file. It does not read or write to the chosen file.
    * 
-   * @return the tileset file chosen, or null if no selection was made.
+   * @return the file selected by the user, or null if the user aborted the
+   *         selection process.
    */
-  public File chooseTilesetToSave() {
+  public File selectTilesetFileToSave() {
     resetChoosableFileFilters();
     setFileFilter(TILESET_FILE_FILTER);
-    base_extension = CHR_EXTENSION;
+    File chosen_file = chooseFileToSave();
     
-    return chooseFileToSave();
+    // if the user made a selection (not null)
+    if (chosen_file != null) {
+      referenced_tileset_file_ = chosen_file;
+    }
+    
+    return chosen_file;
   }
   
   /**
-   * Prompts the user to select a palette file to be opened. The user will be
-   * able to see and select files ending with the associated palette file
-   * extension by default, although they may chose any file regardless of its
-   * extension. If the selection process is aborted, null is returned.
+   * Prompts the user to select a palette file through a file chooser using the
+   * dialog for opening a file and returns the file selected. If the user aborts
+   * the selection process, the referenced file is not changed and null is
+   * returned instead. This method only changes the currently referenced palette
+   * file. It does not read or write to the chosen file.
    * 
-   * @return the palette file chosen, or null if no selection was made.
+   * @return the file selected by the user, or null if the user aborted the
+   *         selection process.
    */
-  public File choosePaletteToOpen() {
+  public File selectPaletteFileToOpen() {
     resetChoosableFileFilters();
     setFileFilter(PALETTE_FILE_FILTER);
+    File chosen_file = chooseFileToOpen();
     
-    return chooseFileToOpen();
+    // if the user made a selection (not null)
+    if (chosen_file != null) {
+      referenced_palette_file_ = chosen_file;
+    }
+    
+    return chosen_file;
   }
   
   /**
-   * Prompts the user to select a palette file to be save to. The user will be
-   * able to see and select files ending with the associated palette file
-   * extension by default, although they may chose any file regardless of its
-   * extension. If the selection process is aborted, null is returned.
+   * Prompts the user to select a palette file through a file chooser using the
+   * dialog for saving a file and returns the file selected. If the user aborts
+   * the selection process, the referenced file is not changed and null is
+   * returned instead. This method only changes the currently referenced palette
+   * file. It does not read or write to the chosen file.
    * 
-   * @return the palette file chosen, or null if no selection was made.
+   * @return the file selected by the user, or null if the user aborted the
+   *         selection process.
    */
-  public File choosePaletteToSave() {
+  public File selectPaletteFileToSave() {
     resetChoosableFileFilters();
     setFileFilter(PALETTE_FILE_FILTER);
-    base_extension = PAL_EXTENSION;
+    File chosen_file = chooseFileToSave();
     
-    return chooseFileToSave();
+    // if the user made a selection (not null)
+    if (chosen_file != null) {
+      referenced_palette_file_ = chosen_file;
+    }
+    
+    return chosen_file;
   }
   
   // launch the prompt to choose a file using whatever filter is already set
@@ -140,24 +253,30 @@ public final class SNESFileChooser extends JFileChooser {
       
       // if the file has no extension, add the current base extension
       if (chosen_file_extension_index == -1) {
-        chosen_file = new File(chosen_file + base_extension);
+        chosen_file = new File(chosen_file + base_extension_);
       } else if (chosen_file_extension_index == chosen_file_name.length() - 1) {
         // if the file ends with a dot, add the extension (minus the dot)
-        chosen_file = new File(chosen_file + base_extension.substring(1));
+        chosen_file = new File(chosen_file + base_extension_.substring(1));
       }
     }
     
     return chosen_file;
   }
   
-  private String base_extension;
+  /** The name given for a tileset without a referenced file. */
+  public static final String DEFAULT_TILESET_FILE_NAME = "[Untitled Tileset]";
+  /** The name given for a palette without a referenced file. */
+  public static final String DEFAULT_PALETTE_FILE_NAME = "[Untitled Palette]";
+  /** The file extension for tileset files. */
+  public static final String CHR_EXTENSION = ".chr";
+  /** The file extension for palette files. */
+  public static final String PAL_EXTENSION = ".pal";
+  
+  private String base_extension_;
+  private File referenced_tileset_file_;
+  private File referenced_palette_file_;
   
   private final Component parent_;
-  
-  /** The file extension for tileset files. */
-  private static final String CHR_EXTENSION = ".chr";
-  /** The file extension for palette files. */
-  private static final String PAL_EXTENSION = ".pal";
   
   // allow only files with an extension associated with tilesets
   private static final FileFilter TILESET_FILE_FILTER = new FileFilter() {

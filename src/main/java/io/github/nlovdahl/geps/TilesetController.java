@@ -16,17 +16,18 @@ GEPS. If not, see <https://www.gnu.org/licenses/>. */
 package io.github.nlovdahl.geps;
 
 import java.awt.Color;
+import java.util.Deque;
+import java.util.LinkedList;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Deque;
-import java.util.LinkedList;
 
 /**
  * The controller for the tileset. The controller handles making changes to the
- * tileset's data model. Unlike {@link Tileset}, the tileset controller has an
+ * tileset's data model. The controller also has methods for reading and writing
+ * tilesets to files. Unlike {@link Tileset}, the tileset controller has an
  * explicit sense of shape - the controller allows tilesets to be used as if
  * they had a width and height even though the tileset itself is essentially
  * amorphous.
@@ -34,8 +35,7 @@ import java.util.LinkedList;
  * @author Nicholas Lovdahl
  * 
  * @see Tileset
- * @see TilesetView
- * @see CanvasView
+ * @see TilesetInterpreter
  */
 public final class TilesetController {
   /**
@@ -83,11 +83,36 @@ public final class TilesetController {
     
     stroke_active_ = false;
     
-    referenced_file_ = null;  // no file is referenced
     unsaved_changes_ = false;
     current_tileset_ = new Tileset(width * height, bpp, bitplane_format);
     undo_states_ = new LinkedList<>();
     redo_states_ = new LinkedList<>();
+  }
+  
+  /**
+   * Gets the current tileset from the controller.
+   * 
+   * @return the controller's current tileset.
+   */
+  public Tileset getTileset() { return current_tileset_; }
+  
+  /**
+   * Sets the current tileset for the controller to the given tileset. This will
+   * clear all undo and redo states and the controller will not have any unsaved
+   * changes after calling this method.
+   * 
+   * @param tileset the new tileset for the controller.
+   * @throws NullPointerException if tileset is null.
+   */
+  public void setTileset(Tileset tileset) {
+    if (tileset == null) {
+      throw new NullPointerException("Cannot use a null tileset.");
+    }  // else, the tileset should be valid
+    
+    unsaved_changes_ = false;
+    undo_states_.clear();
+    redo_states_.clear();
+    current_tileset_ = tileset;
   }
   
   /**
@@ -160,12 +185,61 @@ public final class TilesetController {
   }
   
   /**
-   * Gets the file currently being referenced by the tileset controller, if
-   * any. If there is no referenced file, then null is returned.
+   * Reads the given file to interpret its data as a new tileset for the
+   * controller and returns the number of bytes that were not loaded. This
+   * method will also clear all saved undo and redo states and record that there
+   * are no unsaved changes. If there is a problem reading the file, then the
+   * tileset will not be altered, the undo and redo states will remain, and the
+   * status of unsaved changed will be unchanged.
    * 
-   * @return the currently referenced file if there is one, or null otherwise.
+   * @param file the file to load the tileset from.
+   * @return the number of bytes from the file that were not loaded.
+   * @throws FileNotFoundException if file cannot be found and or accessed.
+   * @throws IOException if there is an IO problem reading from the file.
    */
-  public File getReferencedFile() { return referenced_file_; }
+  public long loadTileset(File file) throws FileNotFoundException, IOException {
+    long file_size, bytes_loaded;
+    
+    // try with resources to create an input stream
+    try (FileInputStream input_stream = new FileInputStream(file)) {
+      file_size = file.length();
+      
+      int max_bits = Tileset.MAX_TILES * Tileset.bitsPerTile(getBPP());
+      int max_bytes = max_bits / 8;
+      // add a byte if there are leftover bits, but not enough for a whole byte
+      if (max_bits % 8 != 0) { max_bytes++; }
+      // read max_bytes at most and decode them
+      byte[] tileset_data = input_stream.readNBytes(max_bytes);
+      current_tileset_ = TilesetInterpreter.decodeBytes(
+                           tileset_data, getBPP(), getBitplaneFormat());
+      bytes_loaded = tileset_data.length;
+      
+      undo_states_.clear();
+      redo_states_.clear();
+      unsaved_changes_ = false;
+    }  // input stream should auto-close since we use try with resources
+    
+    return file_size - bytes_loaded;
+  }
+  
+  /**
+   * Writes the current tileset to the given file. This method will also record
+   * that there are no unsaved changes. If there is a problem saving to the
+   * file, then that status of unsaved changes will be unchanged. If the given
+   * file does not already exist, then it should be created. Alternatively, if
+   * the file already exists, then the existing file will be overwritten.
+   * 
+   * @param file the file to save the controller's current tileset to.
+   * @throws FileNotFoundException if the file cannot be accessed.
+   * @throws IOException if there is an IO problem writing to the file.
+   */
+  public void saveTileset(File file) throws FileNotFoundException, IOException {
+    // try with resources to create an output stream that does not append
+    try (FileOutputStream output_stream = new FileOutputStream(file, false)) {
+      output_stream.write(TilesetInterpreter.encodeTileset(current_tileset_));
+      unsaved_changes_ = false;
+    }  // output stream should auto-close since we use try with resources
+  }
   
   /**
    * Returns whether or not there are unsaved changes to the tileset. This will
@@ -174,7 +248,7 @@ public final class TilesetController {
    * 
    * @return true if there are unsaved changes to the tileset, false otherwise.
    */
-  public boolean isModified() { return unsaved_changes_; }
+  public boolean hasUnsavedChanges() { return unsaved_changes_; }
   
   /**
    * Gets the index for a color in the palette from a pixel in the tileset.
@@ -354,104 +428,6 @@ public final class TilesetController {
   }
   
   /**
-   * Reads the given file to interpret its data as new tileset and records the
-   * new file referenced. This method will also clear all saved undo and redo
-   * states. If there is a problem reading the file, then the tileset will not
-   * be altered, the undo and redo states will remain, and the referenced file
-   * will not be changed.
-   * 
-   * @param file the file to load a tileset from.
-   * @return the number of bytes from the file that were not loaded.
-   * @throws NullPointerException if file is null.
-   * @throws FileNotFoundException if file cannot be found and or accessed.
-   * @throws IOException if there is an IO problem reading from the file.
-   */
-  public long loadTileset(File file) throws FileNotFoundException, IOException {
-    if (file == null) {
-      throw new NullPointerException("Cannot load tileset from null file.");
-    }  // there still might be problems, but the file object exists
-    
-    FileInputStream input_stream = null;
-    long file_size = file.length();
-    long bytes_loaded = 0;
-    
-    try {
-      input_stream = new FileInputStream(file);
-      int max_bits = Tileset.MAX_TILES * Tileset.bitsPerTile(getBPP()) / 8;
-      int max_bytes = max_bits / 8;
-      // add a byte if there are leftover bits, but not enough for a whole byte
-      if (max_bits % 8 != 0) { max_bytes++; }
-      // read max_bytes at most and then decode them
-      byte[] tileset_data = input_stream.readNBytes(max_bytes);
-      bytes_loaded = tileset_data.length;
-      
-      Tileset loaded_tileset = TilesetInterpreter.decodeBytes(
-        tileset_data, getBPP(), getBitplaneFormat());
-      
-      undo_states_.clear();
-      redo_states_.clear();
-      current_tileset_ = loaded_tileset;
-      referenced_file_ = file;
-      unsaved_changes_ = false;
-    } catch (FileNotFoundException file_exception) {
-      throw file_exception;
-    } catch (IOException io_exception) {
-      throw io_exception;
-    } finally {  // no matter what, close the input stream if it exists
-      if (input_stream != null) {
-        try {
-          input_stream.close();
-        } catch (IOException close_exception) {
-          throw close_exception;
-        }
-      }
-    }
-    
-    return file_size - bytes_loaded;  // return how many bytes weren't loaded
-  }
-  
-  /**
-   * Writes the current tileset to the given file and records the new file
-   * referenced. If there is a problem saving to the file, the referenced file
-   * will not be changed. If the given file does not already exist, then it
-   * should be created. Alternatively, if the file already exists, then the
-   * existing file should be overwritten.
-   * 
-   * @param file the file to save the current tileset to.
-   * @throws NullPointerException if file is null.
-   * @throws FileNotFoundException if the file cannot be accessed.
-   * @throws IOException if there is an IO problem writing to the file.
-   */
-  public void saveTileset(File file) throws FileNotFoundException, IOException {
-    if (file == null) {
-      throw new NullPointerException("Cannot save tileset to null file.");
-    }  // there still might be problems, but the file object exists
-    
-    FileOutputStream output_stream = null;
-    
-    try {
-      output_stream = new FileOutputStream(file, false);  // do not append
-      byte[] tileset_data = TilesetInterpreter.encodeTileset(current_tileset_);
-      output_stream.write(tileset_data);
-      
-      referenced_file_ = file;
-      unsaved_changes_ = false;
-    } catch (FileNotFoundException file_exception) {
-      throw file_exception;
-    } catch (IOException io_exception) {
-      throw io_exception;
-    } finally {  // no matter what, close the output stream if it exists
-      if (output_stream != null) {
-        try {
-          output_stream.close();
-        } catch (IOException close_exception) {
-          throw close_exception;
-        }
-      }
-    }
-  }
-  
-  /**
    * Returns whether it is possible to undo - that is, whether it is possible
    * to revert to a previous state for the tileset.
    * 
@@ -614,7 +590,6 @@ public final class TilesetController {
   private int last_stroke_x_;
   private int last_stroke_y_;
   
-  private File referenced_file_;
   private boolean unsaved_changes_;
   private Tileset current_tileset_;
   private final Deque<byte[]> undo_states_;

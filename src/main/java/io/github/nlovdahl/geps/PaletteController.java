@@ -16,33 +16,59 @@ GEPS. If not, see <https://www.gnu.org/licenses/>. */
 package io.github.nlovdahl.geps;
 
 import java.awt.Color;
+import java.util.Deque;
+import java.util.LinkedList;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Deque;
-import java.util.LinkedList;
 
 /**
  * The controller for the palette. The controller handles making changes to the
- * palette's data model.
+ * palette's data model. The controller also has methods for reading and writing
+ * palettes to files.
  * 
  * @author Nicholas Lovdahl
  * 
  * @see Palette
- * @see PaletteView
+ * @see PaletteInterpreter
  */
 public final class PaletteController {
   public PaletteController(int bpp) {
     setBPP(bpp);  // try to set the BPP (it might fail for bpp < MIN, > MAX)
     subpalette_start_index_ = 0;
     
-    referenced_file_ = null;
     unsaved_changes_ = false;
     current_palette_ = new Palette();
     undo_states_ = new LinkedList<>();
     redo_states_ = new LinkedList<>();
+  }
+  
+  /**
+   * Gets the current palette from the controller.
+   * 
+   * @return the controller's current palette.
+   */
+  public Palette getPalette() { return current_palette_; }
+  
+  /**
+   * Sets the current palette for the controller to the given palette. This will
+   * clear all undo and redo states and the controller will not have any unsaved
+   * changes after calling this method.
+   * 
+   * @param palette the new palette for the controller.
+   * @throws NullPointerException if palette is null.
+   */
+  public void setPalette(Palette palette) {
+    if (palette == null) {
+      throw new NullPointerException("Cannot use null palette.");
+    }  // else, the palette should be valid
+    
+    unsaved_changes_ = false;
+    undo_states_.clear();
+    redo_states_.clear();
+    current_palette_ = palette;
   }
   
   /**
@@ -193,12 +219,56 @@ public final class PaletteController {
   }
   
   /**
-   * Gets the file currently being referenced by the palette controller, if
-   * any. If there is no referenced file, then null is returned.
+   * Reads the given file to interpret its data as a new palette for the
+   * controller and returns the number of bytes that were not loaded. This
+   * method will also clear all saved undo and redo states and record that there
+   * are no unsaved changes. If there is a problem reading the file, then the
+   * palette will not be altered, the undo and redo states will remain, and the
+   * status of unsaved changed will be unchanged.
    * 
-   * @return the currently referenced file if there is one, or null otherwise.
+   * @param file the file to load the palette from.
+   * @return the number of bytes from the file that were not loaded.
+   * @throws FileNotFoundException if file cannot be found and or accessed.
+   * @throws IOException if there is an IO problem reading from the file.
    */
-  public File getReferencedFile() { return referenced_file_; }
+  public long loadPalette(File file) throws FileNotFoundException, IOException {
+    long file_size, bytes_loaded;
+    
+    try (FileInputStream input_stream = new FileInputStream(file)) {
+      file_size = file.length();
+      
+      int max_bytes = 2 * Palette.PALETTE_MAX_SIZE;  // 2 bytes per entry
+      // read max_bytes at most and decode them
+      byte[] palette_data = input_stream.readNBytes(max_bytes);
+      current_palette_ = PaletteInterpreter.decodeBytes(palette_data);
+      bytes_loaded = palette_data.length;
+      
+      undo_states_.clear();
+      redo_states_.clear();
+      unsaved_changes_ = false;
+    }
+    
+    return file_size - bytes_loaded;
+  }
+  
+  /**
+   * Writes the current palette to the given file. This method will also record
+   * that there are no unsaved changes. If there is a problem saving to the
+   * file, then that status of unsaved changes will be unchanged. If the given
+   * file does not already exist, then it should be created. Alternatively, if
+   * the file already exists, then the existing file will be overwritten.
+   * 
+   * @param file the file to save the controller's current palette to.
+   * @throws FileNotFoundException if the file cannot be accessed.
+   * @throws IOException if there is an IO problem writing to the file.
+   */
+  public void savePalette(File file) throws FileNotFoundException, IOException {
+    // try with resources to create an output stream that does not append
+    try (FileOutputStream output_stream = new FileOutputStream(file, false)) {
+      output_stream.write(PaletteInterpreter.encodePalette(current_palette_));
+      unsaved_changes_ = false;
+    }  // output stream should auto-close since we use try with resources
+  }
   
   /**
    * Returns whether or not there are unsaved changes to the palette. This will
@@ -207,7 +277,7 @@ public final class PaletteController {
    * 
    * @return true if there are unsaved changes to the palette, false otherwise.
    */
-  public boolean isModified() { return unsaved_changes_; }
+  public boolean hasUnsavedChanges() { return unsaved_changes_; }
   
   /**
    * Takes an index for an entry in the palette and returns whether or not that
@@ -285,100 +355,6 @@ public final class PaletteController {
   }
   
   /**
-   * Reads the given file to interpret its data as new palette and records the
-   * new file referenced. This method will also clear all saved undo and redo
-   * states. If there is a problem reading the file, then the palette will not
-   * be altered, the undo and redo states will remain, and the referenced file
-   * will not be changed.
-   * 
-   * @param file the file to load the palette from.
-   * @return the number of bytes from the file that were not loaded.
-   * @throws NullPointerException if file is null.
-   * @throws FileNotFoundException if file cannot be found and or accessed.
-   * @throws IOException if there is an IO problem reading from the file.
-   */
-  public long loadPalette(File file) throws FileNotFoundException, IOException {
-    if (file == null) {
-      throw new NullPointerException("Cannot load palette from null file.");
-    }  // there still might be problems, but the file object exists
-    
-    FileInputStream input_stream = null;
-    long file_size = file.length();
-    long bytes_loaded = 0;
-    
-    try {
-      input_stream = new FileInputStream(file);
-      int max_bytes = 2 * Palette.PALETTE_MAX_SIZE;  // 2 bytes per entry
-      // read max_bytes at most and then decode them
-      byte[] palette_data = input_stream.readNBytes(max_bytes);
-      bytes_loaded = palette_data.length;
-      
-      Palette loaded_palette = PaletteInterpreter.decodeBytes(palette_data);
-      
-      undo_states_.clear();
-      redo_states_.clear();
-      current_palette_ = loaded_palette;
-      referenced_file_ = file;
-      unsaved_changes_ = false;
-    } catch (FileNotFoundException file_exception) {
-      throw file_exception;
-    } catch (IOException io_exception) {
-      throw io_exception;
-    } finally {  // no matter what, close the input stream if it exists
-      if (input_stream != null) {
-        try {
-          input_stream.close();
-        } catch (IOException close_exception) {
-          throw close_exception;
-        }
-      }
-    }
-    
-    return file_size - bytes_loaded;  // return how many bytes weren't loaded
-  }
-  
-  /**
-   * Writes the current palette to the given file and records the new file
-   * referenced. If there is a problem saving to the file, the referenced file
-   * will not be changed. If the given file does not already exist, then it
-   * should be created. Alternatively, if the file already exists, then the
-   * existing file should be overwritten.
-   * 
-   * @param file the file to save the current tileset to.
-   * @throws NullPointerException if file is null.
-   * @throws FileNotFoundException if the file cannot be accessed.
-   * @throws IOException if there is an IO problem writing to the file.
-   */
-  public void savePalette(File file) throws FileNotFoundException, IOException {
-    if (file == null) {
-      throw new NullPointerException("Cannot save palette to null file.");
-    }  // there still might be problems, but the file object exists
-    
-    FileOutputStream output_stream = null;
-    
-    try {
-      output_stream = new FileOutputStream(file, false);  // do not append
-      byte[] palette_data = PaletteInterpreter.encodePalette(current_palette_);
-      output_stream.write(palette_data);
-      
-      referenced_file_ = file;
-      unsaved_changes_ = false;
-    } catch (FileNotFoundException file_exception) {
-      throw file_exception;
-    } catch (IOException io_exception) {
-      throw io_exception;
-    } finally {  // no matter what, close the output stream if it exists
-      if (output_stream != null) {
-        try {
-          output_stream.close();
-        } catch (IOException close_exception) {
-          throw close_exception;
-        }
-      }
-    }
-  }
-  
-  /**
    * Returns whether it is possible to undo - that is, whether it is possible
    * to revert to a previous state for the palette.
    * 
@@ -440,7 +416,6 @@ public final class PaletteController {
   private int subpalette_start_index_;
   private int selected_color_index_;
   
-  private File referenced_file_;
   private boolean unsaved_changes_;
   private Palette current_palette_;
   private final Deque<Palette> undo_states_;

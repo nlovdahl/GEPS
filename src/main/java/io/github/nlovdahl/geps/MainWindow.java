@@ -283,162 +283,172 @@ public final class MainWindow extends JFrame {
   
   // methods to handle actions and property change events
   private void ExitAction(ActionEvent event) {
-    System.exit(0);
+    if (tileset_controller_.hasUnsavedChanges()) {  // handle an unsaved tileset
+      int result = JOptionPane.showConfirmDialog(
+        this, snes_file_chooser_.getReferencedTilesetFileShortName() +
+        " has unsaved changes.\nWould you like to save them?", "Save Changes?",
+        JOptionPane.YES_NO_CANCEL_OPTION);
+      // save the tileset if the user wants, stop the exit on cancel or closure
+      if (result == JOptionPane.YES_OPTION) {
+        SaveTilesetAction(event);
+      } else if (result != JOptionPane.NO_OPTION) {  // cancel or closure option
+        return;
+      }
+    }
+    
+    if (palette_controller_.hasUnsavedChanges()) {  // handle an unsaved palette
+      int result = JOptionPane.showConfirmDialog(
+        this, snes_file_chooser_.getReferencedPaletteFileShortName() +
+        " has unsaved changes.\nWould you like to save them?", "Save Changes?",
+        JOptionPane.YES_NO_CANCEL_OPTION);
+      // save the palette if the user wants, stop the exit on cancel or closure
+      if (result == JOptionPane.YES_OPTION) {
+        SavePaletteAction(event);
+      } else if (result != JOptionPane.NO_OPTION) {
+        return;
+      }
+    }
+    
+    System.exit(0);  // if we reach this point, we are fine to exit the program
   }
   
   private void OpenTilesetAction(ActionEvent event) {
-    File chosen_file = snes_file_chooser_.chooseTilesetToOpen();
+    if (tileset_controller_.hasUnsavedChanges()) {  // handle an unsaved tileset
+      int result = JOptionPane.showConfirmDialog(
+        this, snes_file_chooser_.getReferencedTilesetFileShortName() +
+        " has unsaved changes.\nWould you like to save them?", "Save Changes?",
+        JOptionPane.YES_NO_CANCEL_OPTION);
+      // save the tileset if the user wants, stop the exit on cancel or closure
+      if (result == JOptionPane.YES_OPTION) {
+        SaveTilesetAction(event);
+      } else if (result != JOptionPane.NO_OPTION) {  // cancel or closure option
+        return;
+      }
+    }
     
-    if (chosen_file != null) {  // if the user chose a file
-      long bytes_not_loaded = 0;
+    // let the user select the tileset, then load it
+    File selected_file = snes_file_chooser_.selectTilesetFileToOpen();
+    if (selected_file != null) {  // if user made a selection (not null)
       try {
-        bytes_not_loaded = tileset_controller_.loadTileset(chosen_file);
+        long unloaded_bytes = tileset_controller_.loadTileset(selected_file);
+        if (unloaded_bytes > 0) {
+          JOptionPane.showMessageDialog(
+            this, snes_file_chooser_.getReferencedTilesetFileShortName() +
+            " was only partially loaded.\n" + Long.toString(unloaded_bytes) +
+            " bytes were not loaded.", "File Partially Loaded",
+            JOptionPane.INFORMATION_MESSAGE);
+        }
         
         updateTitle();
         updateTilesetUndoRedoUI();
-        
-        repaintTileset();  // repaint since things may have changed
+        repaintTileset();
       } catch (FileNotFoundException file_exception) {
         JOptionPane.showMessageDialog(
-          this, file_exception.getLocalizedMessage(),
-          "File Not Found Error", JOptionPane.ERROR_MESSAGE);
+          this, file_exception.toString(),
+          "File Not Found Exception", JOptionPane.ERROR_MESSAGE);
       } catch (IOException io_exception) {
         JOptionPane.showMessageDialog(
-          this, io_exception.getLocalizedMessage(),
-          "IO Error", JOptionPane.ERROR_MESSAGE);
-      }
-      // if there were bytes in the file that were not loaded, warn the user
-      if (bytes_not_loaded != 0) {
-        JOptionPane.showMessageDialog(
-          this, chosen_file.getName() + " was too large. " +
-          Long.toString(bytes_not_loaded) + " bytes were not loaded.",
-          "File Partially Loaded", JOptionPane.WARNING_MESSAGE);
+          this, io_exception.toString(),
+          "IO Exception", JOptionPane.ERROR_MESSAGE);
       }
     }
   }
   
   private void SaveTilesetAction(ActionEvent event) {
-    File referenced_file = tileset_controller_.getReferencedFile();
-    if (referenced_file != null) {  // if there is a currently referenced file
+    // if there is no referenced tileset file to save to, make this a save as
+    File tileset_file = snes_file_chooser_.getReferencedTilesetFile();
+    if (tileset_file == null) {  // if there is no current referenced file
+      SaveTilesetAsAction(event);
+    } else {  // just save to the file
       try {
-        tileset_controller_.saveTileset(referenced_file);
+        tileset_controller_.saveTileset(tileset_file);
+        updateTitle();
       } catch (FileNotFoundException file_exception) {
         JOptionPane.showMessageDialog(
-          this, file_exception.getLocalizedMessage(),
-          "File Not Found Error", JOptionPane.ERROR_MESSAGE);
+          this, file_exception.toString(),
+          "File Not Found Exception", JOptionPane.ERROR_MESSAGE);
       } catch (IOException io_exception) {
         JOptionPane.showMessageDialog(
-          this, io_exception.getLocalizedMessage(),
-          "IO Error", JOptionPane.ERROR_MESSAGE);
+          this, io_exception.toString(),
+          "IO Exception", JOptionPane.ERROR_MESSAGE);
       }
-    } else {  // else, make this a save as action
-      SaveTilesetAsAction(event);
     }
   }
   
   private void SaveTilesetAsAction(ActionEvent event) {
-    File chosen_file = snes_file_chooser_.chooseTilesetToSave();
-    if (chosen_file != null) {
-      // check if the file exists (and if the user wants to overwrite it if so)
-      if (chosen_file.exists()) {
-        int result = JOptionPane.showConfirmDialog(
-          this, chosen_file.getName() + " already exists.\n" +
-          "Do you want to overwrite it?", "Overwrite File?",
-          JOptionPane.YES_NO_CANCEL_OPTION);
-        // return (do nothing) unless the user confirms they want to overwrite
-        if (result != JOptionPane.YES_OPTION) { return; }
-      }
-      
-      try {
-        tileset_controller_.saveTileset(chosen_file);
-        updateTitle();
-      } catch (FileNotFoundException file_exception) {
-        JOptionPane.showMessageDialog(
-          this, file_exception.getLocalizedMessage(),
-          "File Not Found Error", JOptionPane.ERROR_MESSAGE);
-      } catch (IOException io_exception) {
-        JOptionPane.showMessageDialog(
-          this, io_exception.getLocalizedMessage(),
-          "IO Error", JOptionPane.ERROR_MESSAGE);
-      }
+    File tileset_file = snes_file_chooser_.selectTilesetFileToSave();
+    if (tileset_file != null) {  // if the user made a selection (not null)
+      SaveTilesetAction(event);  // then proceed to save the tileset
     }
   }
   
   private void OpenPaletteAction(ActionEvent event) {
-    File chosen_file = snes_file_chooser_.choosePaletteToOpen();
+    if (palette_controller_.hasUnsavedChanges()) {  // handle an unsaved palette
+      int result = JOptionPane.showConfirmDialog(
+        this, snes_file_chooser_.getReferencedPaletteFileShortName() +
+        " has unsaved changes.\nWould you like to save them?", "Save Changes?",
+        JOptionPane.YES_NO_CANCEL_OPTION);
+      // save the palette if the user wants, stop the exit on cancel or closure
+      if (result == JOptionPane.YES_OPTION) {
+        SavePaletteAction(event);
+      } else if (result != JOptionPane.NO_OPTION) {
+        return;
+      }
+    }
     
-    if (chosen_file != null) {  // if the user chose a file
-      long bytes_not_loaded = 0;
+    // let the user select the tileset, then load it
+    File selected_file = snes_file_chooser_.selectPaletteFileToOpen();
+    if (selected_file != null) {  // if user made a selection (not null)
       try {
-        bytes_not_loaded = palette_controller_.loadPalette(chosen_file);
+        long unloaded_bytes = palette_controller_.loadPalette(selected_file);
+        if (unloaded_bytes > 0) {
+          JOptionPane.showMessageDialog(
+            this, snes_file_chooser_.getReferencedPaletteFileShortName() +
+            " was only partially loaded.\n" + Long.toString(unloaded_bytes) +
+            " bytes were not loaded.", "File Partially Loaded",
+            JOptionPane.INFORMATION_MESSAGE);
+        }
         
         updateTitle();
         updatePaletteUndoRedoUI();
-        
-        repaintAll();  // repaint since things may have changed
+        repaintAll();
       } catch (FileNotFoundException file_exception) {
         JOptionPane.showMessageDialog(
-          this, file_exception.getLocalizedMessage(),
-          "File Not Found Error", JOptionPane.ERROR_MESSAGE);
+          this, file_exception.toString(),
+          "File Not Found Exception", JOptionPane.ERROR_MESSAGE);
       } catch (IOException io_exception) {
         JOptionPane.showMessageDialog(
-          this, io_exception.getLocalizedMessage(),
-          "IO Error", JOptionPane.ERROR_MESSAGE);
-      }
-      // if there were bytes in the file that were not loaded, warn the user
-      if (bytes_not_loaded != 0) {
-        JOptionPane.showMessageDialog(
-          this, chosen_file.getName() + " was too large. " +
-          Long.toString(bytes_not_loaded) + " bytes were not loaded.",
-          "File Partially Loaded", JOptionPane.WARNING_MESSAGE);
+          this, io_exception.toString(),
+          "IO Exception", JOptionPane.ERROR_MESSAGE);
       }
     }
   }
   
   private void SavePaletteAction(ActionEvent event) {
-    File referenced_file = palette_controller_.getReferencedFile();
-    if (referenced_file != null) {  // if there is a currently referenced file
+    // if there is no referenced palette file to save to, make this a save as
+    File palette_file = snes_file_chooser_.getReferencedPaletteFile();
+    if (palette_file == null) {  // if there is no current referenced file
+      SavePaletteAsAction(event);
+    } else {  // just save to the file
       try {
-        palette_controller_.savePalette(referenced_file);
+        palette_controller_.savePalette(palette_file);
+        updateTitle();
       } catch (FileNotFoundException file_exception) {
         JOptionPane.showMessageDialog(
-          this, file_exception.getLocalizedMessage(),
-          "File Not Found Error", JOptionPane.ERROR_MESSAGE);
+          this, file_exception.toString(),
+          "File Not Found Exception", JOptionPane.ERROR_MESSAGE);
       } catch (IOException io_exception) {
         JOptionPane.showMessageDialog(
-          this, io_exception.getLocalizedMessage(),
-          "IO Error", JOptionPane.ERROR_MESSAGE);
+          this, io_exception.toString(),
+          "IO Exception", JOptionPane.ERROR_MESSAGE);
       }
-    } else {  // else, make this a save as action
-      SavePaletteAsAction(event);
     }
   }
   
   private void SavePaletteAsAction(ActionEvent event) {
-    File chosen_file = snes_file_chooser_.choosePaletteToSave();
-    if (chosen_file != null) {
-      // check if the file exists (and if the user wants to overwrite it if so)
-      if (chosen_file.exists()) {
-        int result = JOptionPane.showConfirmDialog(
-          this, chosen_file.getName() + " already exists.\n" +
-          "Do you want to overwrite it?", "Overwrite File?",
-          JOptionPane.YES_NO_CANCEL_OPTION);
-        // return (do nothing) unless the user confirms they want to overwrite
-        if (result != JOptionPane.YES_OPTION) { return; }
-      }
-      
-      try {
-        palette_controller_.savePalette(chosen_file);
-        updateTitle();
-      } catch (FileNotFoundException file_exception) {
-        JOptionPane.showMessageDialog(
-          this, file_exception.getLocalizedMessage(),
-          "File Not Found Error", JOptionPane.ERROR_MESSAGE);
-      } catch (IOException io_exception) {
-        JOptionPane.showMessageDialog(
-          this, io_exception.getLocalizedMessage(),
-          "IO Error", JOptionPane.ERROR_MESSAGE);
-      }
+    File palette_file = snes_file_chooser_.selectPaletteFileToSave();
+    if (palette_file != null) {  // if the user made a selection (not null)
+      SavePaletteAction(event);  // then proceed to save the tileset
     }
   }
   
@@ -446,8 +456,6 @@ public final class MainWindow extends JFrame {
     if (tileset_controller_.canUndo()) {
       tileset_controller_.undo();
       updateTilesetUndoRedoUI();
-      updateFormatUI();
-      
       repaintTileset();  // repaint since things may have changed
     }
   }
@@ -456,8 +464,6 @@ public final class MainWindow extends JFrame {
     if (tileset_controller_.canRedo()) {
       tileset_controller_.redo();
       updateTilesetUndoRedoUI();
-      updateFormatUI();
-      
       repaintTileset();  // repaint since things may have changed
     }
   }
@@ -466,7 +472,6 @@ public final class MainWindow extends JFrame {
     if (palette_controller_.canUndo()) {
       palette_controller_.undo();
       updatePaletteUndoRedoUI();
-      
       repaintAll();  // repaint since things may have changed
     }
   }
@@ -475,7 +480,6 @@ public final class MainWindow extends JFrame {
     if (palette_controller_.canRedo()) {
       palette_controller_.redo();
       updatePaletteUndoRedoUI();
-      
       repaintAll();  // repaint since things may have changed]
     }
   }
@@ -495,9 +499,7 @@ public final class MainWindow extends JFrame {
       palette_controller_.setBPP(bpp);
       tileset_controller_.changeBPP(bpp);
       updateTitle();
-      updateTilesetUndoRedoUI();
       updateFormatUI();
-      
       repaintAll();  // repaint since things may have changed
     }
   }
@@ -523,9 +525,7 @@ public final class MainWindow extends JFrame {
     
     tileset_controller_.changeBitplaneFormat(bitplane_format);
     updateTitle();
-    updateTilesetUndoRedoUI();
     updateFormatUI();
-    
     repaintTileset();  // repaint since things may have changed
   }
   
@@ -559,26 +559,15 @@ public final class MainWindow extends JFrame {
   }
   
   private void updateTitle() {
-    File tileset_file = tileset_controller_.getReferencedFile();
-    String tileset_filename;
-    if (tileset_file == null) {  // if there is no currently referenced file
-      tileset_filename = "[Untitled Tileset]";
-    } else {
-      tileset_filename = tileset_file.getAbsolutePath();
-      if (tileset_controller_.isModified()) {  // add a star for unsaved changes
-        tileset_filename = "*" + tileset_filename;
-      }
+    String tileset_filename =
+      snes_file_chooser_.getReferencedTilesetFileLongName();
+    if (tileset_controller_.hasUnsavedChanges()) {
+      tileset_filename = "*" + tileset_filename;  // add a * for unsaved changes
     }
-    
-    File palette_file = palette_controller_.getReferencedFile();
-    String palette_filename;
-    if (palette_file == null) {  // if there is no currently referenced file
-      palette_filename = "[Untitled Palette]";
-    } else {
-      palette_filename = palette_file.getAbsolutePath();
-      if (palette_controller_.isModified()) {  // add a star for unsaved changes
-        palette_filename = "*" + palette_filename;
-      }
+    String palette_filename =
+      snes_file_chooser_.getReferencedPaletteFileLongName();
+    if (palette_controller_.hasUnsavedChanges()) {
+      palette_filename = "*" + palette_filename;  // add a * for unsaved changes
     }
     
     setTitle("GEPS - " + tileset_filename + " | " + palette_filename);
