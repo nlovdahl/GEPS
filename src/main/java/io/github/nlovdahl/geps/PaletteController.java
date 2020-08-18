@@ -46,32 +46,6 @@ public final class PaletteController {
   }
   
   /**
-   * Gets the current palette from the controller.
-   * 
-   * @return the controller's current palette.
-   */
-  public Palette getPalette() { return current_palette_; }
-  
-  /**
-   * Sets the current palette for the controller to the given palette. This will
-   * clear all undo and redo states and the controller will not have any unsaved
-   * changes after calling this method.
-   * 
-   * @param palette the new palette for the controller.
-   * @throws NullPointerException if palette is null.
-   */
-  public void setPalette(Palette palette) {
-    if (palette == null) {
-      throw new NullPointerException("Cannot use null palette.");
-    }  // else, the palette should be valid
-    
-    unsaved_changes_ = false;
-    undo_states_.clear();
-    redo_states_.clear();
-    current_palette_ = palette;
-  }
-  
-  /**
    * Gets the color in the specified index in the palette of the palette
    * controller. This method is a wrapper for the {@link Palette#getColor(int)}
    * method.

@@ -90,32 +90,6 @@ public final class TilesetController {
   }
   
   /**
-   * Gets the current tileset from the controller.
-   * 
-   * @return the controller's current tileset.
-   */
-  public Tileset getTileset() { return current_tileset_; }
-  
-  /**
-   * Sets the current tileset for the controller to the given tileset. This will
-   * clear all undo and redo states and the controller will not have any unsaved
-   * changes after calling this method.
-   * 
-   * @param tileset the new tileset for the controller.
-   * @throws NullPointerException if tileset is null.
-   */
-  public void setTileset(Tileset tileset) {
-    if (tileset == null) {
-      throw new NullPointerException("Cannot use a null tileset.");
-    }  // else, the tileset should be valid
-    
-    unsaved_changes_ = false;
-    undo_states_.clear();
-    redo_states_.clear();
-    current_tileset_ = tileset;
-  }
-  
-  /**
    * Gets the width of the tileset - the number of tiles from left to right in
    * the tileset.
    * 
