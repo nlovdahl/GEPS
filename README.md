@@ -1,5 +1,5 @@
 # GEPS
-GEPS is a Graphics Editing Program for SNES homebrew development. GEPS can create, load, edit, and save tilesets and palettes that can be used on SNES hardware. GEPS supports multiple bitplane formats (serial, planar, and intertwined) and a varying number of bits per pixel (1-8 BPP) for tilesets. Tilesets can be viewed and edited using different subpalettes (depending on the number of bits per pixel being used).
+GEPS is a Graphics Editing Program for SNES homebrew development. GEPS can create, load, edit, and save tilesets and palettes that can be used on SNES hardware. GEPS supports multiple bitplane formats (serial, planar, and intertwined) and a varying number of bits per pixel (1, 2, 3, 4, and 8) for tilesets. Tilesets can be viewed and edited using different subpalettes (depending on the number of bits per pixel being used).
 
 # Installation
 GEPS can be built using Maven. You can [download](https://maven.apache.org/download.cgi) and [install Maven](http://maven.apache.org/install.html) if you don't already have it. Once Maven is installed, you can use the following commands:
