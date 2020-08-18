@@ -107,8 +107,11 @@ public final class PaletteController {
   
   /**
    * Sets the color for a specified index in the palette based on the given RGB
-   * components. This method is a wrapper for the
-   * {@link Palette#setColor(int, int, int, int)} method.
+   * components. This method is essentially a wrapper for the
+   * {@link Palette#setColor(int, int, int, int)} method. If setting the color
+   * would change the palette, then the controller will save the previous state
+   * of the palette for a possible undo and record that there are now unsaved
+   * changes.
    * 
    * @param index the index in the palette of the color to set.
    * @param r the value for the red component of the color.
@@ -116,28 +119,37 @@ public final class PaletteController {
    * @param b the value for the blue component of the color.
    */
   public void setColor(int index, int r, int g, int b) {
-    saveForUndo();
-    redo_states_.clear();
-    unsaved_changes_ = true;
-    
-    current_palette_.setColor(index, r, g, b);  // should be clamped in Palette
+    Color existing_color = Palette.clampColor(current_palette_.getColor(index));
+    if (existing_color.getRed() != r || existing_color.getGreen() != g ||
+        existing_color.getBlue() != b) {
+      saveForUndo();
+      redo_states_.clear();
+      unsaved_changes_ = true;
+      
+      current_palette_.setColor(index, r, g, b);  // clamped in Palette
+    }
   }
   
   /**
    * Sets the color for a specified index in the palette based on the given
    * color. This method is a wrapper for the
-   * {@link Palette#setColor(int, java.awt.Color)} method.
+   * {@link Palette#setColor(int, java.awt.Color)} method. If setting the color
+   * would change the palette, then the controller will save the previous state
+   * of the palette for a possible undo and record that there are now unsaved
+   * changes.
    * 
    * @param index the index in the palette of the color to set.
    * @param color the color whose values will be used to set the color entry in
    *              the palette.
    */
   public void setColor(int index, Color color) {
-    saveForUndo();
-    redo_states_.clear();
-    unsaved_changes_ = true;
-    
-    current_palette_.setColor(index, color);  // should be clamped in Palette
+    if (Palette.clampColor(current_palette_.getColor(index)) != color) {
+      saveForUndo();
+      redo_states_.clear();
+      unsaved_changes_ = true;
+      
+      current_palette_.setColor(index, color);  // should be clamped in Palette
+    }
   }
   
   /**

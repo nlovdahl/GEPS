@@ -368,10 +368,11 @@ public final class TilesetController {
   
   /**
    * Begins a brush stroke across the tileset at the specified coordinates using
-   * the given index, and records that an active stroke has begun. This method
-   * will also save the state of the tileset before changing it for a possible
-   * undo. If invalid coordinates are provided, the stroke will still begin and
-   * the tileset's state will be saved, but the tileset will not be altered.
+   * the given index, and records that an active stroke has begun. If the
+   * current tileset would be changed, then its previous unchanged state will be
+   * saved for a possible undo and it will be recorded that there are now
+   * unsaved changes. If invalid coordinates are provided, the stroke will still
+   * begin, but the tileset will not be altered.
    * <p>
    * The other stroke methods, {@link #addToStroke(int, int)} and
    * {@link #endStroke(int, int)} will use the index given to this method for
@@ -382,8 +383,7 @@ public final class TilesetController {
    * @param index the index to use for the stroke.
    */
   public void beginStroke(int x, int y, int index) {
-    saveForUndo();
-    redo_states_.clear();
+    stroke_change_ = false;  // the current stroke has made no changes to start
     
     // only make a change to the tileset if the point is in range
     if (isPointInTileset(x, y)) { setPixelIndex(x, y, index); }
@@ -396,9 +396,12 @@ public final class TilesetController {
   
   /**
    * Continues a brush stroke by drawing a line between the last coordinates and
-   * the given coordinates. If there is no active stroke, this method will do
-   * nothing. Likewise, if the given coordinates are the same as the last
-   * coordinates, nothing will happen.
+   * the given coordinates. If the current tileset would be changed and has not
+   * already been saved for an undo in the current stroke, then the previous
+   * unchanged state of the tileset will be saved for a possible undo and it
+   * will be recorded that there are now unsaved changes. If there is no active
+   * stroke, this method will do nothing. Likewise, if the given coordinates are
+   * the same as the last coordinates, nothing will happen.
    * <p>
    * The index used by this method will be the one given to
    * {@link #beginStroke(int, int, int)} for the respective stroke.
@@ -421,9 +424,12 @@ public final class TilesetController {
   /**
    * Ends a brush stroke across the tileset at the specified coordinates; a line
    * will be drawn between the last coordinates in the stroke and the given
-   * coordinates. If there is no active stroke, then the tileset will not be
-   * altered. No line will be drawn if the specified coordinates are the same as
-   * the last coordinates.
+   * coordinates. If the current tileset would be changed and has not
+   * already been saved for an undo in the current stroke, then the previous
+   * unchanged state of the tileset will be saved for a possible undo and it
+   * will be recorded that there are now unsaved changes. If there is no active
+   * stroke, then the tileset will not be altered. No line will be drawn if the
+   * specified coordinates are the same as the last coordinates.
    * <p>
    * The index used by this method will be the one given to
    * {@link #beginStroke(int, int, int)} for the respective stroke.
@@ -503,29 +509,9 @@ public final class TilesetController {
     return tileset_width_ * (y / Tileset.TILE_HEIGHT) + x / Tileset.TILE_WIDTH;
   }
   
-  /**
-   * Sets the index for the given coordinates in a specified tile in the
-   * tileset. The given coordinates are based from (0, 0) at the top-right and
-   * correspond to pixels in the tileset. This method is similar to
-   * {@link Tileset#setPixelIndex(int, int, int, int)}, except that it takes the
-   * height and width of the tileset into account.
-   * 
-   * @param x the horizontal component of the coordinates to set the index for.
-   * @param y the vertical component of the coordinates to set the index for.
-   * @param index the new value for the index.
-   * @throws IllegalArgumentException if the given coordinates are outside of
-   *         the bounds of the tileset, or if
-   *         {@link Tileset#setPixelIndex(int, int, int, int)} finds the
-   *         arguments invalid.
-   */
+  // sets the index for the specified coordinates in the current tileset
+  // this could save the state of the tileset if there is a new change
   private void setPixelIndex(int x, int y, int index) {
-    // check that the coordinates are valid
-    if (!isPointInTileset(x, y)) {
-      throw new IllegalArgumentException(
-        "Cannot set index for coordinates (" + Integer.toString(x) + ", " +
-        Integer.toString(y) + ").");
-    } // else, the coordinates are valid
-    
     // find the coordinates relative to the tile
     int tile = getTileNumber(x, y);
     x %= Tileset.TILE_WIDTH;
@@ -533,8 +519,15 @@ public final class TilesetController {
     
     // only make a change if it would be meaningful
     if (index != current_tileset_.getPixelIndex(tile, x, y)) {
+      // if the tileset's state has not yet been saved during the current stroke
+      if (!stroke_change_) {  // then save the current state of the tileset
+        saveForUndo();
+        redo_states_.clear();
+        stroke_change_ = true;
+        unsaved_changes_ = true;
+      }
+      
       current_tileset_.setPixelIndex(tile, x, y, index);
-      unsaved_changes_ = true;
     }
   }
   
@@ -601,6 +594,7 @@ public final class TilesetController {
   private int tileset_width_;   // number of tiles from left to right
   
   private boolean stroke_active_;
+  private boolean stroke_change_;
   private int stroke_index_;
   private int last_stroke_x_;
   private int last_stroke_y_;
