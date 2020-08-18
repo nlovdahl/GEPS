@@ -320,8 +320,23 @@ public final class TilesetController {
     }  // else, we have a legal bpp value
     
     if (bpp != getBPP()) {
-      current_tileset_ = TilesetInterpreter.reinterpretTileset(
+      // prepare in case the # of bits changes (then we have a change to save)
+      int old_num_bits = current_tileset_.getNumberOfTiles() *
+                         current_tileset_.getBitsPerTile();
+      
+      Tileset reinterpreted_tileset_ = TilesetInterpreter.reinterpretTileset(
         current_tileset_, bpp, getBitplaneFormat());
+      
+      int new_num_bits = reinterpreted_tileset_.getNumberOfTiles() *
+                         reinterpreted_tileset_.getBitsPerTile();
+      // if the # of bits changed, there's different data (save before change)
+      if (new_num_bits != old_num_bits) {
+        saveForUndo();
+        redo_states_.clear();
+        unsaved_changes_ = true;
+      }
+      
+      current_tileset_ = reinterpreted_tileset_;
     }
   }
   
