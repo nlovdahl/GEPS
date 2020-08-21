@@ -73,7 +73,7 @@ public final class MainWindow extends JFrame {
     int initial_tileset_height = 8;
     int initial_bpp = 4;
     int initial_bitplane_format = Tileset.BITPLANE_PLANAR;
-    int initial_canvas_scale_factor = 4;  // scale by x4
+    int initial_tileset_scale_factor = 4;  // x4 scaler
     
     palette_controller_ = new PaletteController(initial_bpp);
     tileset_controller_ = new TilesetController(
@@ -81,9 +81,8 @@ public final class MainWindow extends JFrame {
       initial_bpp, initial_bitplane_format);
     
     palette_view_ = new PaletteView(this, palette_controller_);
-    tileset_view_ = new TilesetView(tileset_controller_);
-    canvas_view_ = new CanvasView(
-      tileset_controller_, palette_controller_, initial_canvas_scale_factor);  
+    tileset_view_ = new TilesetView(
+      tileset_controller_, palette_controller_, initial_tileset_scale_factor);  
     
     // initialize the menu bar
     JMenuBar menu_bar = new JMenuBar();
@@ -216,28 +215,22 @@ public final class MainWindow extends JFrame {
     
     // setup the scroll panes for the tileset, canvas, and palette
     JScrollPane tileset_scroll = new JScrollPane(tileset_view_);
-    JScrollPane canvas_scroll = new JScrollPane(canvas_view_);
     JScrollPane palette_scroll = new JScrollPane(palette_view_);
     
-    // create the split panes that contain the views
-    JSplitPane tileset_split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
-                                              tileset_scroll, canvas_scroll);
-    tileset_split.setResizeWeight(0.2);
-    tileset_split.setContinuousLayout(true);
-    
-    JSplitPane palette_split = new JSplitPane(JSplitPane.VERTICAL_SPLIT,
-                                              tileset_split, palette_scroll);
-    palette_split.setResizeWeight(1);
-    palette_split.setContinuousLayout(true);
+    // create a split pane to contain the views
+    JSplitPane view_split = new JSplitPane(JSplitPane.VERTICAL_SPLIT,
+                                           tileset_scroll, palette_scroll);
+    view_split.setResizeWeight(1);
+    view_split.setContinuousLayout(true);
     
     // control the divider's location by fixing its location if moved too far
-    palette_split.addPropertyChangeListener("dividerLocation",
-                                            (PropertyChangeEvent event) -> {
+    view_split.addPropertyChangeListener("dividerLocation",
+                                         (PropertyChangeEvent event) -> {
       int location = (Integer) event.getNewValue();  // location div moved to
-      int min = palette_split.getHeight() -          // size for palette view
-              palette_view_.getPreferredSize().height -
-              2 * palette_split.getDividerSize();
-      if (location < min) { palette_split.setDividerLocation(min); }
+      int min = view_split.getHeight() -          // size for palette view
+                palette_view_.getPreferredSize().height -
+                2 * view_split.getDividerSize();
+      if (location < min) { view_split.setDividerLocation(min); }
     });
     
     // update parts of the UI that are updated dynamically
@@ -249,13 +242,13 @@ public final class MainWindow extends JFrame {
     // arrange the layout of the frame's components within the frame
     setLayout(new BorderLayout());
     Container pane = getContentPane();
-    pane.add(palette_split, BorderLayout.CENTER);
+    pane.add(view_split, BorderLayout.CENTER);
     
     pack();
     
     // setup property change listeners that need to interact with the UI
-    canvas_view_.addPropertyChangeListener(CanvasView.NEW_CANVAS_STATE,
-                                           this::TilesetStateChange);
+    tileset_view_.addPropertyChangeListener(TilesetView.NEW_TILESET_STATE,
+                                            this::TilesetStateChange);
     palette_view_.addPropertyChangeListener(PaletteView.NEW_PALETTE_STATE,
                                             (this::PaletteStateChange));
     palette_view_.addPropertyChangeListener(PaletteView.NEW_PALETTE_SUBPALETTE,
@@ -341,7 +334,7 @@ public final class MainWindow extends JFrame {
         
         updateTitle();
         updateTilesetUndoRedoUI();
-        repaintTileset();
+        tileset_view_.repaint();
       } catch (FileNotFoundException file_exception) {
         JOptionPane.showMessageDialog(
           this, file_exception.toString(),
@@ -411,7 +404,8 @@ public final class MainWindow extends JFrame {
         
         updateTitle();
         updatePaletteUndoRedoUI();
-        repaintAll();
+        tileset_view_.repaint();  // repaint since things may have changed
+        palette_view_.repaint();
       } catch (FileNotFoundException file_exception) {
         JOptionPane.showMessageDialog(
           this, file_exception.toString(),
@@ -456,7 +450,7 @@ public final class MainWindow extends JFrame {
     if (tileset_controller_.canUndo()) {
       tileset_controller_.undo();
       updateTilesetUndoRedoUI();
-      repaintTileset();  // repaint since things may have changed
+      tileset_view_.repaint();  // repaint since things may have changed
     }
   }
   
@@ -464,7 +458,7 @@ public final class MainWindow extends JFrame {
     if (tileset_controller_.canRedo()) {
       tileset_controller_.redo();
       updateTilesetUndoRedoUI();
-      repaintTileset();  // repaint since things may have changed
+      tileset_view_.repaint();  // repaint since things may have changed
     }
   }
   
@@ -472,7 +466,8 @@ public final class MainWindow extends JFrame {
     if (palette_controller_.canUndo()) {
       palette_controller_.undo();
       updatePaletteUndoRedoUI();
-      repaintAll();  // repaint since things may have changed
+      tileset_view_.repaint();  // repaint since things may have changed
+      palette_view_.repaint();
     }
   }
   
@@ -480,15 +475,16 @@ public final class MainWindow extends JFrame {
     if (palette_controller_.canRedo()) {
       palette_controller_.redo();
       updatePaletteUndoRedoUI();
-      repaintAll();  // repaint since things may have changed]
+      tileset_view_.repaint();  // repaint since things may have changed
+      palette_view_.repaint();
     }
   }
   
   private void CanvasZoomChangeAction(ActionEvent event) {
     // parse the command, except the first character, which should be the number
     int scale_factor = Integer.parseInt(event.getActionCommand().substring(1));
-    canvas_view_.setScaleFactor(scale_factor);
-    canvas_view_.repaint();  // repaint the canvas with the new scaling factor
+    tileset_view_.setScaleFactor(scale_factor);
+    tileset_view_.repaint();  // repaint the canvas with the new scaling factor
   }
   
   private void BPPChangeAction(ActionEvent event) {
@@ -496,11 +492,12 @@ public final class MainWindow extends JFrame {
     int bpp = Integer.parseInt(event.getActionCommand().split(" ")[0]);
     // proceed only if the bpp is within a tolerable range
     if (bpp >= Tileset.MIN_BPP && bpp <= Tileset.MAX_BPP) {
-      palette_controller_.setBPP(bpp);
       tileset_controller_.changeBPP(bpp);
+      palette_controller_.setBPP(bpp);
       updateTitle();
       updateFormatUI();
-      repaintAll();  // repaint since things may have changed
+      tileset_view_.repaint();  // repaint since things may have changed
+      palette_view_.repaint();
     }
   }
   
@@ -526,7 +523,7 @@ public final class MainWindow extends JFrame {
     tileset_controller_.changeBitplaneFormat(bitplane_format);
     updateTitle();
     updateFormatUI();
-    repaintTileset();  // repaint since things may have changed
+    tileset_view_.repaint();  // repaint since things may have changed
   }
   
   private void AboutAction(ActionEvent event) {
@@ -544,20 +541,10 @@ public final class MainWindow extends JFrame {
   }
   
   private void PaletteSubpaletteChange(PropertyChangeEvent event) {
-    repaintTileset();
-  }
-  
-  // methods to dynamically update the UI
-  private void repaintAll() {
-    palette_view_.repaint();
-    repaintTileset();
-  }
-  
-  private void repaintTileset() {
-    canvas_view_.repaint();
     tileset_view_.repaint();
   }
   
+  // methods to dynamically update the UI
   private void updateTitle() {
     String tileset_filename =
       snes_file_chooser_.getReferencedTilesetFileLongName();
@@ -648,5 +635,4 @@ public final class MainWindow extends JFrame {
   
   private final PaletteView palette_view_;
   private final TilesetView tileset_view_;
-  private final CanvasView canvas_view_;
 }

@@ -25,7 +25,6 @@ package io.github.nlovdahl.geps;
  * 
  * @see TilesetController
  * @see TilesetView
- * @see CanvasView
  */
 public final class Tileset {
   /**
