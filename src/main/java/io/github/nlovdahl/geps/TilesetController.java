@@ -40,7 +40,9 @@ import java.io.IOException;
 public final class TilesetController {
   /**
    * Creates a tileset controller using the given number of bits per pixel and
-   * an initial tileset with the specified width and height.
+   * an initial tileset with the specified width and height. If
+   * {@link #resetTileset()} is called, then the current tileset will have the
+   * same parameters as given to this constructor.
    * 
    * @param width the width of the initial tileset in tiles.
    * @param height the height of the initial tileset in tiles.
@@ -80,6 +82,10 @@ public final class TilesetController {
     }  // else, we have legal values
     
     tileset_width_ = width;
+    initial_tileset_width_ = width;
+    initial_tileset_height_ = height;
+    initial_bpp_ = bpp;
+    initial_bitplane_format_ = bitplane_format;
     
     stroke_active_ = false;
     
@@ -156,6 +162,23 @@ public final class TilesetController {
    */
   public int getBitplaneFormat() {
     return current_tileset_.getBitplaneFormat();
+  }
+  
+  /**
+   * Resets the current tileset so that it is the same as it was when the
+   * tileset controller was first created - this will also remove any states for
+   * possible undos and redos, and record that there are now no unsaved changes.
+   * The tileset will have the width, height, bits per pixel, and bitplane
+   * format as initially given to the constructor.
+   */
+  public void resetTileset() {
+    tileset_width_ = initial_tileset_width_;
+    undo_states_.clear();
+    redo_states_.clear();
+    unsaved_changes_ = false;
+    current_tileset_ = new Tileset(
+      initial_tileset_width_ * initial_tileset_height_,
+      initial_bpp_, initial_bitplane_format_);
   }
   
   /**
@@ -577,4 +600,9 @@ public final class TilesetController {
   private Tileset current_tileset_;
   private final Deque<byte[]> undo_states_;
   private final Deque<byte[]> redo_states_;
+  
+  private final int initial_tileset_width_;
+  private final int initial_tileset_height_;
+  private final int initial_bpp_;
+  private final int initial_bitplane_format_;
 }

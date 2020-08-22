@@ -88,6 +88,9 @@ public final class MainWindow extends JFrame {
     JMenuBar menu_bar = new JMenuBar();
     
     JMenu file_menu = new JMenu("File");  // file menu initialization...
+    JMenuItem new_tileset_menu_item = new JMenuItem("New Tileset");
+    new_tileset_menu_item.addActionListener(this::NewTilesetAction);
+    file_menu.add(new_tileset_menu_item);
     JMenuItem open_tileset_menu_item = new JMenuItem("Open Tileset...");
     open_tileset_menu_item.addActionListener(this::OpenTilesetAction);
     file_menu.add(open_tileset_menu_item);
@@ -98,6 +101,9 @@ public final class MainWindow extends JFrame {
     save_tileset_as_menu_item.addActionListener(this::SaveTilesetAsAction);
     file_menu.add(save_tileset_as_menu_item);
     file_menu.add(new JSeparator());
+    JMenuItem new_palette_menu_item = new JMenuItem("New Palette");
+    new_palette_menu_item.addActionListener(this::NewPaletteAction);
+    file_menu.add(new_palette_menu_item);
     JMenuItem open_palette_menu_item = new JMenuItem("Open Palette...");
     open_palette_menu_item.addActionListener(this::OpenPaletteAction);
     file_menu.add(open_palette_menu_item);
@@ -305,6 +311,29 @@ public final class MainWindow extends JFrame {
     System.exit(0);  // if we reach this point, we are fine to exit the program
   }
   
+  private void NewTilesetAction(ActionEvent event) {
+    if (tileset_controller_.hasUnsavedChanges()) {  // handle an unsaved tileset
+      int result = JOptionPane.showConfirmDialog(
+        this, snes_file_chooser_.getReferencedTilesetFileShortName() +
+        " has unsaved changes.\nWould you like to save them?", "Save Changes?",
+        JOptionPane.YES_NO_CANCEL_OPTION);
+      // save the tileset if the user wants, stop the exit on cancel or closure
+      if (result == JOptionPane.YES_OPTION) {
+        SaveTilesetAction(event);
+      } else if (result != JOptionPane.NO_OPTION) {  // cancel or closure option
+        return;
+      }
+    }
+    
+    // now reset the current tileset
+    tileset_controller_.resetTileset();
+    snes_file_chooser_.resetReferencedTilesetFile();
+    updateTitle();
+    updateTilesetUndoRedoUI();
+    updateFormatUI();
+    tileset_view_.repaint();
+  }
+  
   private void OpenTilesetAction(ActionEvent event) {
     if (tileset_controller_.hasUnsavedChanges()) {  // handle an unsaved tileset
       int result = JOptionPane.showConfirmDialog(
@@ -373,6 +402,29 @@ public final class MainWindow extends JFrame {
     if (tileset_file != null) {  // if the user made a selection (not null)
       SaveTilesetAction(event);  // then proceed to save the tileset
     }
+  }
+  
+  private void NewPaletteAction(ActionEvent event) {
+    if (palette_controller_.hasUnsavedChanges()) {  // handle an unsaved palette
+      int result = JOptionPane.showConfirmDialog(
+        this, snes_file_chooser_.getReferencedPaletteFileShortName() +
+        " has unsaved changes.\nWould you like to save them?", "Save Changes?",
+        JOptionPane.YES_NO_CANCEL_OPTION);
+      // save the palette if the user wants, stop the exit on cancel or closure
+      if (result == JOptionPane.YES_OPTION) {
+        SavePaletteAction(event);
+      } else if (result != JOptionPane.NO_OPTION) {
+        return;
+      }
+    }
+    
+    // now reset the current palette
+    palette_controller_.resetPalette();
+    snes_file_chooser_.resetReferencedPaletteFile();
+    updateTitle();
+    updatePaletteUndoRedoUI();
+    palette_view_.repaint();
+    tileset_view_.repaint();
   }
   
   private void OpenPaletteAction(ActionEvent event) {

@@ -27,7 +27,10 @@ import java.io.IOException;
 /**
  * The controller for the palette. The controller handles making changes to the
  * palette's data model. The controller also has methods for reading and writing
- * palettes to files.
+ * palettes to files. The palette controller also adds the notion of a
+ * subpalette, a subset of the palette covering a number of palette entries
+ * based on the number of bits per pixel being used, as well as a selected color
+ * from this subpalette.
  * 
  * @author Nicholas Lovdahl
  * 
@@ -35,9 +38,31 @@ import java.io.IOException;
  * @see PaletteInterpreter
  */
 public final class PaletteController {
+  /**
+   * Creates a palette controller using the given number of bits per pixel. The
+   * initially selected color from the subpalette will be the first color in the
+   * palette, and the subpalette will be such that it includes the initially
+   * selected color. If {@link #resetPalette()} is called, then the selected
+   * color and subpalette will be set as previously described.
+   * 
+   * @param bpp the number of bits per pixel to be used. This should be between
+   *        {@link Tileset#MIN_BPP} and {@link Tileset#MAX_BPP}.
+   * @throws IllegalArgumentException if bpp is invalid.
+   */
   public PaletteController(int bpp) {
-    setBPP(bpp);  // try to set the BPP (it might fail for bpp < MIN, > MAX)
+    if (bpp < Tileset.MIN_BPP) {
+      throw new IllegalArgumentException(
+        "Cannot set bpp to value less than " +
+        Integer.toString(Tileset.MIN_BPP) + ".");
+    } else if (bpp > Tileset.MAX_BPP) {
+      throw new IllegalArgumentException(
+        "Cannot set bpp to value more than " +
+        Integer.toString(Tileset.MAX_BPP) + ".");
+    }  // else, the bpp should be valid
+    
+    bpp_ = bpp;
     subpalette_start_index_ = 0;
+    selected_color_index_ = 0;
     
     unsaved_changes_ = false;
     current_palette_ = new Palette();
@@ -202,6 +227,24 @@ public final class PaletteController {
     }  // else, we have a legal index
     
     subpalette_start_index_ = index - (index % (1 << bpp_));
+  }
+  
+  /**
+   * Resets the current palette, and the currently selected color and subpalette
+   * so that they are the same as when the palette controller was first created
+   * - this will also remove any states for possible undos and redos, and record
+   * that there are now no unsaved changes. The subpalette and selected color
+   * from the palette will also be reset such that the selected color is the
+   * first color in the reset palette. The number of bits per pixel being used
+   * will not be changed.
+   */
+  public void resetPalette() {
+    subpalette_start_index_ = 0;
+    selected_color_index_ = 0;
+    undo_states_.clear();
+    redo_states_.clear();
+    unsaved_changes_ = false;
+    current_palette_ = new Palette();
   }
   
   /**
