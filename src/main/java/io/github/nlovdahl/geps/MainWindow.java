@@ -134,34 +134,34 @@ public final class MainWindow extends JFrame {
     edit_menu.add(palette_redo_menu_item_);
     
     JMenu view_menu = new JMenu("View");  // view menu initialization...
-    JMenu canvas_zoom_submenu = new JMenu("Canvas Zoom");
-    ButtonGroup canvas_zoom_item_group = new ButtonGroup();
-    JRadioButtonMenuItem canvas_zoom_1_item = new JRadioButtonMenuItem("x1");
-    canvas_zoom_submenu.add(canvas_zoom_1_item);
-    canvas_zoom_item_group.add(canvas_zoom_1_item);
-    canvas_zoom_1_item.addActionListener(this::CanvasZoomChangeAction);
-    JRadioButtonMenuItem canvas_zoom_2_item = new JRadioButtonMenuItem("x2");
-    canvas_zoom_submenu.add(canvas_zoom_2_item);
-    canvas_zoom_item_group.add(canvas_zoom_2_item);
-    canvas_zoom_2_item.addActionListener(this::CanvasZoomChangeAction);
-    JRadioButtonMenuItem canvas_zoom_4_item = new JRadioButtonMenuItem("x4");
-    canvas_zoom_submenu.add(canvas_zoom_4_item);
-    canvas_zoom_item_group.add(canvas_zoom_4_item);
-    canvas_zoom_4_item.addActionListener(this::CanvasZoomChangeAction);
-    JRadioButtonMenuItem canvas_zoom_8_item = new JRadioButtonMenuItem("x8");
-    canvas_zoom_submenu.add(canvas_zoom_8_item);
-    canvas_zoom_item_group.add(canvas_zoom_8_item);
-    canvas_zoom_8_item.addActionListener(this::CanvasZoomChangeAction);
-    JRadioButtonMenuItem canvas_zoom_16_item = new JRadioButtonMenuItem("x16");
-    canvas_zoom_submenu.add(canvas_zoom_16_item);
-    canvas_zoom_item_group.add(canvas_zoom_16_item);
-    canvas_zoom_16_item.addActionListener(this::CanvasZoomChangeAction);
-    JRadioButtonMenuItem canvas_zoom_32_item = new JRadioButtonMenuItem("x32");
-    canvas_zoom_submenu.add(canvas_zoom_32_item);
-    canvas_zoom_item_group.add(canvas_zoom_32_item);
-    canvas_zoom_32_item.addActionListener(this::CanvasZoomChangeAction);
-    canvas_zoom_4_item.setSelected(true);  // begin with x4 zoom by default
-    view_menu.add(canvas_zoom_submenu);
+    JMenu tileset_zoom_submenu = new JMenu("Tileset Zoom");
+    ButtonGroup tileset_zoom_item_group = new ButtonGroup();
+    JRadioButtonMenuItem tileset_zoom_1_item = new JRadioButtonMenuItem("x1");
+    tileset_zoom_submenu.add(tileset_zoom_1_item);
+    tileset_zoom_item_group.add(tileset_zoom_1_item);
+    tileset_zoom_1_item.addActionListener(this::TilesetZoomChangeAction);
+    JRadioButtonMenuItem tileset_zoom_2_item = new JRadioButtonMenuItem("x2");
+    tileset_zoom_submenu.add(tileset_zoom_2_item);
+    tileset_zoom_item_group.add(tileset_zoom_2_item);
+    tileset_zoom_2_item.addActionListener(this::TilesetZoomChangeAction);
+    JRadioButtonMenuItem tileset_zoom_4_item = new JRadioButtonMenuItem("x4");
+    tileset_zoom_submenu.add(tileset_zoom_4_item);
+    tileset_zoom_item_group.add(tileset_zoom_4_item);
+    tileset_zoom_4_item.addActionListener(this::TilesetZoomChangeAction);
+    JRadioButtonMenuItem tileset_zoom_8_item = new JRadioButtonMenuItem("x8");
+    tileset_zoom_submenu.add(tileset_zoom_8_item);
+    tileset_zoom_item_group.add(tileset_zoom_8_item);
+    tileset_zoom_8_item.addActionListener(this::TilesetZoomChangeAction);
+    JRadioButtonMenuItem tileset_zoom_16_item = new JRadioButtonMenuItem("x16");
+    tileset_zoom_submenu.add(tileset_zoom_16_item);
+    tileset_zoom_item_group.add(tileset_zoom_16_item);
+    tileset_zoom_16_item.addActionListener(this::TilesetZoomChangeAction);
+    JRadioButtonMenuItem tileset_zoom_32_item = new JRadioButtonMenuItem("x32");
+    tileset_zoom_submenu.add(tileset_zoom_32_item);
+    tileset_zoom_item_group.add(tileset_zoom_32_item);
+    tileset_zoom_32_item.addActionListener(this::TilesetZoomChangeAction);
+    tileset_zoom_4_item.setSelected(true);  // begin with x4 zoom by default
+    view_menu.add(tileset_zoom_submenu);
     
     JMenu format_menu = new JMenu("Format");  // format menu initialization...
     JMenu bpp_submenu = new JMenu("Bits per Pixel");
@@ -219,7 +219,7 @@ public final class MainWindow extends JFrame {
     menu_bar.add(help_menu);
     setJMenuBar(menu_bar);
     
-    // setup the scroll panes for the tileset, canvas, and palette
+    // setup the scroll panes for the tileset, and palette
     JScrollPane tileset_scroll = new JScrollPane(tileset_view_);
     JScrollPane palette_scroll = new JScrollPane(palette_view_);
     
@@ -532,11 +532,11 @@ public final class MainWindow extends JFrame {
     }
   }
   
-  private void CanvasZoomChangeAction(ActionEvent event) {
+  private void TilesetZoomChangeAction(ActionEvent event) {
     // parse the command, except the first character, which should be the number
     int scale_factor = Integer.parseInt(event.getActionCommand().substring(1));
     tileset_view_.setScaleFactor(scale_factor);
-    tileset_view_.repaint();  // repaint the canvas with the new scaling factor
+    tileset_view_.repaint();  // repaint the tileset with the new scaling factor
   }
   
   private void BPPChangeAction(ActionEvent event) {
