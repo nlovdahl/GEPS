@@ -329,8 +329,8 @@ public class PaletteTest {
   
   /**
    * The {@link Palette#getSNESColorCode(java.awt.Color)} method should give a
-   * clamped version of the color that is then packed into 0RRRRRGGGGGBBBBB
-   * (or 5R5G5B) format.
+   * clamped version of the color that is then packed into 0BBBBBGGGGGRRRRR
+   * (or 5B5G5R) format.
    */
   @Test
   public void testGetSNESColorCode() {
