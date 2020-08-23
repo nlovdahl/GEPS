@@ -295,14 +295,55 @@ public final class TilesetController {
   }
   
   /**
+   * Changes the number of tiles in the tileset to have the given number of
+   * tiles - if the given number of tiles is different from the current number
+   * of tiles, then the state of the tileset will be saved for a possible undo,
+   * any saved states for a possible redo will be cleared, and it will be
+   * recorded that there are now unsaved changes. However, if the given number
+   * of tiles is the same as the current number of tiles, nothing will be done.
+   * <p>
+   * The pattern from the current tileset will be carried over in its entirety
+   * unless there are too few tiles to copy to. Otherwise, if the number of
+   * tiles in the current tileset is greater than the given number of tiles, the
+   * pattern will be copied entirely but the remaining tiles will have no
+   * pattern.
+   * 
+   * @param tiles the number of tiles that the tileset should be have.
+   * @throws IllegalArgumentException if tiles is less than 1 or greater than
+   *         {@link Tileset#MAX_TILES}.
+   */
+  public void changeNumberOfTiles(int tiles) {
+    if (tiles < 1) {
+      throw new IllegalArgumentException("Cannot have less than one tile.");
+    } else if (tiles > Tileset.MAX_TILES) {
+      throw new IllegalArgumentException(
+        "Cannot have more than " + Integer.toString(Tileset.MAX_TILES) +
+        " tiles.");
+    }  // else, the number of tiles should be valid
+    
+    // only do something if there is a different number of tiles
+    if (current_tileset_.getNumberOfTiles() != tiles) {
+      // set to a copy with a the needed number of tiles
+      saveForUndo();
+      redo_states_.clear();
+      current_tileset_ = new Tileset(current_tileset_, tiles);
+      unsaved_changes_ = true;
+    }
+  }
+  
+  /**
    * Changes the number of bits per pixel used for the current tileset. If the
    * number of bits per pixel is different from that of the current tileset,
    * then the current tileset will be reinterpreted to match the new number of
    * bits per pixel.
+   * <p>
+   * If the number of bits needed to represent the tileset needs to be changed
+   * for the reinterpreted tileset, the state of the tileset before the
+   * reinterpretation will be saved for a possible undo, remove any saved states
+   * for a redo, and record that there are now unsaved changes.
    * 
    * @param bpp the number of bits per pixel to be used. This should be between
-   *        {@link PaletteController#MIN_BPP} and
-   *        {@link PaletteController#MAX_BPP}.
+   *        {@link Tileset#MIN_BPP} and {@link Tileset#MAX_BPP}.
    * @throws IllegalArgumentException if bpp is invalid.
    */
   public void changeBPP(int bpp) {

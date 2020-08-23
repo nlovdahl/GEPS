@@ -25,6 +25,8 @@ import javax.swing.JMenuItem;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.ButtonGroup;
 import javax.swing.JSeparator;
+import javax.swing.SpinnerNumberModel;
+import javax.swing.JSpinner;
 import javax.swing.WindowConstants;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
@@ -164,6 +166,9 @@ public final class MainWindow extends JFrame {
     view_menu.add(tileset_zoom_submenu);
     
     JMenu format_menu = new JMenu("Format");  // format menu initialization...
+    JMenuItem tileset_size_menu_item = new JMenuItem("Tileset Size...");
+    tileset_size_menu_item.addActionListener(this::TilesetSizeChangeAction);
+    format_menu.add(tileset_size_menu_item);
     JMenu bpp_submenu = new JMenu("Bits per Pixel");
     ButtonGroup bpp_item_group = new ButtonGroup();
     one_bpp_item_ = new JRadioButtonMenuItem("1 BPP");
@@ -539,6 +544,30 @@ public final class MainWindow extends JFrame {
     tileset_view_.repaint();  // repaint the tileset with the new scaling factor
   }
   
+  private void TilesetSizeChangeAction(ActionEvent event) {
+    // create a spinner that starts with the current number of tiles
+    SpinnerNumberModel tileset_size_spinner_model =
+      new SpinnerNumberModel(tileset_controller_.getNumberOfTiles(),
+                             1, Tileset.MAX_TILES, 1);  // min, max, step
+    JSpinner tileset_size_spinner = new JSpinner(tileset_size_spinner_model);
+    int result = JOptionPane.showOptionDialog(
+      this, tileset_size_spinner, "Select New Tileset Size",
+      JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE,
+      null, null, null);  // default icon and no options (we use the spinner)
+    
+    // change the tileset's size if the user made a choice, do nothing otherwise
+    if (result == JOptionPane.OK_OPTION) {
+      int new_tileset_size = (int) tileset_size_spinner.getValue();
+      // only do something if the number is different
+      if (new_tileset_size != tileset_controller_.getNumberOfTiles()) {
+        tileset_controller_.changeNumberOfTiles(new_tileset_size);
+        updateTitle();
+        updateTilesetUndoRedoUI();
+        tileset_view_.repaint();  // repaint since things may have changed
+      }
+    }
+  }
+  
   private void BPPChangeAction(ActionEvent event) {
     // split and parse the first part of the command, which should be the number
     int bpp = Integer.parseInt(event.getActionCommand().split(" ")[0]);
@@ -547,6 +576,7 @@ public final class MainWindow extends JFrame {
       tileset_controller_.changeBPP(bpp);
       palette_controller_.setBPP(bpp);
       updateTitle();
+      updateTilesetUndoRedoUI();
       updateFormatUI();
       tileset_view_.repaint();  // repaint since things may have changed
       palette_view_.repaint();

@@ -33,15 +33,15 @@ public final class Tileset {
    * zero.
    * 
    * @param tiles the number of tiles for the created tileset. This should be
-   *        between one and {@link Tileset#MAX_TILES}.
+   *        between one and {@link #MAX_TILES}.
    * @param bpp the bits per pixel used to select a color in the palette. This
    *        should be between {@link #MIN_BPP} and {@link #MAX_BPP}.
    * @param bitplane_format the number corresponding to a bitplane format for
    *        the tileset. This should be one of {@link #BITPLANE_SERIAL},
    *        {@link #BITPLANE_PLANAR}, or {@link #BITPLANE_INTERTWINED}.
    * @throws IllegalArgumentException if the number of tiles is less than 1 or
-   *         greater than {@link Tileset#MAX_TILES}, or bpp or bitplane_format
-   *         are invalid.
+   *         greater than {@link #MAX_TILES}, or bpp or bitplane_format are
+   *         invalid.
    */
   public Tileset(int tiles, int bpp, int bitplane_format) {
     if (tiles < 1) {
@@ -64,25 +64,42 @@ public final class Tileset {
   }
   
   /**
-   * Creates a distinct copy of a given tileset. This new tileset has the same
-   * number of tiles, bits per pixel, and pattern as the original tileset. This
-   * new tileset is a deep copy; it does not use references to the data in the
-   * tileset to be copied but instead sets aside separate data for itself which
-   * is identical.
+   * Creates a distinct copy of a given tileset, but with the specified number
+   * of tiles. The new tileset will have the same number of bits per pixel and
+   * bitplane format as the original tileset. The pattern from tileset will be
+   * copied in its entirety unless there are too few tiles to copy to.
+   * Otherwise, if the number of tiles is greater than the number of tiles in
+   * the tileset to copy, the tileset will be copied entirely but the remaining
+   * tiles will have no pattern.
    * 
    * @param tileset the tileset to be copied.
+   * @param tiles the number of tiles that the new tileset should have.
    */
-  public Tileset(Tileset tileset) {
-    this(tileset.getNumberOfTiles(), tileset.getBPP(),
-         tileset.getBitplaneFormat());
+  public Tileset(Tileset tileset, int tiles) {
+    // create a tileset with the desired # of tiles, and the same bpp & format
+    this(tiles, tileset.getBPP(), tileset.getBitplaneFormat());
     
-    for (int tile = 0; tile < tiles_; tile++) {
+    // copy to the new tileset until all is copied, or there is no more space
+    int tile_limit = Math.min(tiles, tileset.getNumberOfTiles());
+    for (int tile = 0; tile < tile_limit; tile++) {
       for (int x = 0; x < TILE_WIDTH; x++) {
         for (int y = 0; y < TILE_HEIGHT; y++) {
           setPixelIndex(tile, x, y, tileset.getPixelIndex(tile, x, y));
         }
       }
     }
+  }
+  
+  /**
+   * Creates a distinct copy of a given tileset. This new tileset has the same
+   * number of tiles, bits per pixel, bitplane format, and pattern as the
+   * original tileset.
+   * 
+   * @param tileset the tileset to be copied.
+   */
+  public Tileset(Tileset tileset) {
+    // create a copy that uses the same number of tiles as the original tileset
+    this(tileset, tileset.getNumberOfTiles());
   }
   
   /**
