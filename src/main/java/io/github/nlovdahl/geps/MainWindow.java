@@ -666,12 +666,12 @@ public final class MainWindow extends JFrame {
   // methods to dynamically update the UI
   private void updateTitle() {
     String tileset_filename =
-      snes_file_chooser_.getReferencedTilesetFileLongName();
+      snes_file_chooser_.getReferencedTilesetFileShortName();
     if (tileset_controller_.hasUnsavedChanges()) {
       tileset_filename = "*" + tileset_filename;  // add a * for unsaved changes
     }
     String palette_filename =
-      snes_file_chooser_.getReferencedPaletteFileLongName();
+      snes_file_chooser_.getReferencedPaletteFileShortName();
     if (palette_controller_.hasUnsavedChanges()) {
       palette_filename = "*" + palette_filename;  // add a * for unsaved changes
     }
