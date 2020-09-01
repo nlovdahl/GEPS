@@ -27,50 +27,39 @@ package io.github.nlovdahl.geps;
 public final class TilesetInterpreter {
   /**
    * Takes an existing tileset and reinterprets it to create a new tileset with
-   * the specified number of bits per pixel and bitplane format. If both the
-   * number of bits per pixel and bitplane format are the same as those of the
+   * the specified number of bits per pixel and tileset format. If both the
+   * number of bits per pixel and tileset format are the same as those of the
    * given tileset, then a new tileset which is a deep copy of the tileset will
    * be returned.
    * 
    * @param tileset the tileset to be reinterpreted.
    * @param bpp the number of bits per pixel that the tileset should be
-   *        reinterpreted with. This should be between {@link Tileset#MIN_BPP}
-   *        and {@link Tileset#MAX_BPP}.
-   * @param bitplane_format the bitplane format that the tileset should be
-   *        reinterpreted with. This should be one of
-   *        {@link Tileset#BITPLANE_SERIAL}, {@link Tileset#BITPLANE_PLANAR}, or
-   *        {@link Tileset#BITPLANE_INTERTWINED}.
+   *        reinterpreted with.
+   * @param tileset_format the tileset format that the tileset should be
+   *        reinterpreted with.
    * @return a new tileset with the specified number of bits per pixel and
-   *         bitplane format.
+   *         tileset format.
    * @throws NullPointerException if the given tileset is null.
-   * @throws IllegalArgumentException if bpp or bitplane_format is invalid.
+   * @throws IllegalArgumentException if bpp or tileset_format are invalid per
+   *         {@link Tileset#isValidBPP(int)} and
+   *         {@link Tileset#isValidTilesetFormat(int)}, respectively.
    */
   public static Tileset reinterpretTileset(Tileset tileset,
-                                           int bpp, int bitplane_format) {
+                                           int bpp, int tileset_format) {
     if (tileset == null) {
       throw new NullPointerException("Cannot reinterpret a null tileset.");
-    } else if (bpp < Tileset.MIN_BPP) {
-      throw new IllegalArgumentException(
-        "Cannot set bpp to value less than " +
-        Integer.toString(Tileset.MIN_BPP) + ".");
-    } else if (bpp > Tileset.MAX_BPP) {
-      throw new IllegalArgumentException(
-        "Cannot set bpp to value more than " +
-        Integer.toString(Tileset.MAX_BPP) + ".");
-    } else if (bitplane_format != Tileset.BITPLANE_SERIAL &&
-               bitplane_format != Tileset.BITPLANE_PLANAR &&
-               bitplane_format != Tileset.BITPLANE_INTERTWINED) {
-      throw new IllegalArgumentException(
-        Integer.toString(bitplane_format) + " does not correspond to a valid " +
-        "bitplane format.");
-    }  // else, we have legal values
+    } else if (!Tileset.isValidBPP(bpp)) {
+      throw new IllegalArgumentException("Invalid BPP value.");
+    } else if (!Tileset.isValidTilesetFormat(tileset_format)) {
+      throw new IllegalArgumentException("Invalid tileset format.");
+    }  // else, we should have valid parameters
     
     // return a deep copy of the tileset if it already matches the given specs
     if (tileset.getBPP() == bpp &&
-        tileset.getBitplaneFormat() == bitplane_format) {
+        tileset.getTilesetFormat() == tileset_format) {
       return new Tileset(tileset);
     } else {  // else, reinterpret the tileset
-      return decodeBytes(encodeTileset(tileset), bpp, bitplane_format);
+      return decodeBytes(encodeTileset(tileset), bpp, tileset_format);
     }
   }
   
@@ -85,151 +74,322 @@ public final class TilesetInterpreter {
    */
   public static byte[] encodeTileset(Tileset tileset) {
     if (tileset == null) {
-      throw new NullPointerException("Cannot create data from null tileset.");
+      throw new NullPointerException("Cannot encode a null tileset.");
     }  // else, the tileset should be valid
     
-    // the number of tiles is limited so that tileset_bits will fit in an int
-    int num_bits = tileset.getNumberOfTiles() *
-                   Tileset.bitsPerTile(tileset.getBPP());
-    int num_bytes = num_bits / 8;
-    // add an extra byte if there will be remainder bits (but not a full byte)
-    if (num_bits % 8 != 0) { num_bytes++; }
-    
-    byte[] tileset_data = new byte[num_bytes];
-    
-    // set the initial pixel coordinates and bitplane
-    int tile = 0, x = 0, y = 0, bitplane = 0;
-    // serial encoding starts with the MSB, unlike planar and intertwined
-    if (tileset.getBitplaneFormat() == Tileset.BITPLANE_SERIAL) {
-      bitplane = tileset.getBPP() - 1;
+    TilesetEncoderDecoder encoder;
+    int bpp = tileset.getBPP();
+    // select the appropriate encoder based on the tileset format
+    switch (tileset.getTilesetFormat()) {
+      case Tileset.SERIAL_FORMAT:
+        encoder = new SerialFormatEncoderDecoder(bpp);
+        break;
+      case Tileset.PLANAR_FORMAT:
+        encoder = new PlanarFormatEncoderDecoder(bpp);
+        break;
+      case Tileset.LINEAR_INTERTWINED_FORMAT:
+        encoder = new LinearIntertwinedFormatEncoderDecoder(bpp);
+        break;
+      case Tileset.PAIRED_INTERTWINED_FORMAT:
+        encoder = new PairedIntertwinedFormatEncoderDecoder(bpp);
+        break;
+      default:
+        throw new RuntimeException("Unexpected tileset format.");
     }
     
-    // begin encoding each bit that we need to
-    for (int bit = 0; bit < num_bits; bit++) {
-      // if the bit for the chosen bitplane in the pixel index is 1, encode a 1
-      if ((tileset.getPixelIndex(tile, x, y) & (1 << bitplane)) != 0) {
-        tileset_data[bit / 8] |= (128 >> (bit % 8));
-      }  // else, there should be a 0 by default already (so just skip it)
-      
-      // advance the pixel coordinates and bitplane based on the bitplane format
-      switch (tileset.getBitplaneFormat()) {
-        // for serial: bitplane (MSB to LSB) -> x -> y -> tile
-        case Tileset.BITPLANE_SERIAL:
-          bitplane--;
-          if (bitplane < 0) { bitplane = tileset.getBPP() - 1; x++; }
-          if (x >= Tileset.TILE_WIDTH) { x = 0; y++; }
-          if (y >= Tileset.TILE_HEIGHT) { y = 0; tile++; }
-          break;
-        // for planar: x -> y -> bitplane (LSB to MSB) -> tile
-        case Tileset.BITPLANE_PLANAR:
-          x++;
-          if (x >= Tileset.TILE_WIDTH) { x = 0; y++; }
-          if (y >= Tileset.TILE_HEIGHT) { y = 0; bitplane++; }
-          if (bitplane >= tileset.getBPP()) { bitplane = 0; tile++; }
-          break;
-        // for intertwined: x -> bitplane (LSB to MSB) -> y -> tile
-        case Tileset.BITPLANE_INTERTWINED:
-          x++;
-          if (x >= Tileset.TILE_WIDTH) { x = 0; bitplane++; }
-          if (bitplane >= tileset.getBPP()) { bitplane = 0; y++; }
-          if (y >= Tileset.TILE_HEIGHT) { y = 0; tile++; }
-          break;
-      }
-    }
-    
-    return tileset_data;
+    return encoder.encode(tileset);
   }
   
   /**
    * Takes an array of bytes and interprets them to create a tileset with the
-   * specified number of bits per pixel and bitplane format.
+   * specified number of bits per pixel and tileset format. The given tileset
+   * data can be reconstructed using
+   * {@link #encodeTileset(io.github.nlovdahl.geps.Tileset)}.
    * 
    * @param tileset_data the bytes to be interpreted.
-   * @param bpp the number of bits per pixel used for interpretation. This
-   *        should be between {@link Tileset#MIN_BPP} and
-   *        {@link Tileset#MAX_BPP}.
-   * @param bitplane_format the bitplane format used to interpretation. This
-   *        should be one of {@link Tileset#BITPLANE_SERIAL},
-   *        {@link Tileset#BITPLANE_PLANAR}, or
-   *        {@link Tileset#BITPLANE_INTERTWINED}.
-   * @return the resulting tileset interpreted from the given bytes, bits per
-   *         pixel, and bitplane format.
-   * @throws NullPointerException if tileset_bytes is null.
-   * @throws IllegalArgumentException if tileset_bytes has a length of less than
-   *         one, or if bpp or bitplane_format are invalid.
+   * @param bpp the number of bits per pixel used for interpretation.
+   * @param tileset_format the tileset format used to interpretation.
+   * @return the resulting tileset interpreted from the given bytes, using the
+   *         specified number of bits per pixel, and tileset format.
+   * @throws NullPointerException if tileset_data is null.
+   * @throws IllegalArgumentException if tileset_data has a length of less than
+   *         one, or if bpp or tileset_format are invalid per
+   *         {@link Tileset#isValidBPP(int)} and
+   *         {@link Tileset#isValidTilesetFormat(int)}, respectively.
    */
   public static Tileset decodeBytes(byte[] tileset_data,
-                                    int bpp, int bitplane_format) {
+                                    int bpp, int tileset_format) {
     if (tileset_data == null) {
       throw new NullPointerException("Cannot interpret null byte array.");
     } else if (tileset_data.length < 1) {
       throw new IllegalArgumentException("Cannot interpret empty byte array.");
-    } else if (bpp < Tileset.MIN_BPP) {
-      throw new IllegalArgumentException(
-        "Cannot use bpp to value less than " +
-        Integer.toString(Tileset.MIN_BPP) + ".");
-    } else if (bpp > Tileset.MAX_BPP) {
-      throw new IllegalArgumentException(
-        "Cannot use bpp to value more than " +
-        Integer.toString(Tileset.MAX_BPP) + ".");
-    } else if (bitplane_format != Tileset.BITPLANE_SERIAL &&
-               bitplane_format != Tileset.BITPLANE_PLANAR &&
-               bitplane_format != Tileset.BITPLANE_INTERTWINED) {
-      throw new IllegalArgumentException(
-        Integer.toString(bitplane_format) +
-        " does not correspond to a valid bitplane format.");
-    }  // else, we have legal values
+    } else if (!Tileset.isValidBPP(bpp)) {
+      throw new IllegalArgumentException("Invalid BPP value.");
+    } else if (!Tileset.isValidTilesetFormat(tileset_format)) {
+      throw new IllegalArgumentException("Invalid tileset format value.");
+    }  // else, we should have valid parameters
     
-    // the number of tiles is limited so that tileset_bits will fit in an int
-    int num_bits = tileset_data.length * 8;
-    int bits_per_tile = Tileset.bitsPerTile(bpp);
-    int num_tiles = num_bits / bits_per_tile;
-    // add an extra tile if there will be remainder bits (but not a full tile)
-    if (num_bits % bits_per_tile != 0) { num_tiles++; }
-    
-    Tileset tileset = new Tileset(num_tiles, bpp, bitplane_format);
-    
-    // set the initial pixel coordinates and bitplane
-    int tile = 0, x = 0, y = 0, bitplane = 0;
-    // serial encoding starts with the MSB, unlike planar and intertwined
-    if (tileset.getBitplaneFormat() == Tileset.BITPLANE_SERIAL) {
-      bitplane = tileset.getBPP() - 1;
+    TilesetEncoderDecoder decoder;
+    // select the appropriate decoder based on the tileset format
+    switch (tileset_format) {
+      case Tileset.SERIAL_FORMAT:
+        decoder = new SerialFormatEncoderDecoder(bpp);
+        break;
+      case Tileset.PLANAR_FORMAT:
+        decoder = new PlanarFormatEncoderDecoder(bpp);
+        break;
+      case Tileset.LINEAR_INTERTWINED_FORMAT:
+        decoder = new LinearIntertwinedFormatEncoderDecoder(bpp);
+        break;
+      case Tileset.PAIRED_INTERTWINED_FORMAT:
+        decoder = new PairedIntertwinedFormatEncoderDecoder(bpp);
+        break;
+      default:
+        throw new RuntimeException("Unexpected tileset format.");
     }
     
-    // begin decoding each bit we need to
-    for (int bit = 0; bit < num_bits; bit++) {
-      // if the current bit is 1, set the corresponding bit in the tileset
-      if ((tileset_data[bit / 8] & (128 >> (bit % 8))) != 0) {
-        int new_index = tileset.getPixelIndex(tile, x, y) | (1 << bitplane);
-        tileset.setPixelIndex(tile, x, y, new_index);
-      }  // else, there should be a 0 by default already (so just skip it)
+    return decoder.decode(tileset_data);
+  }
+  
+  /** A template class for both encoding and decoding tilesets. */
+  private static abstract class TilesetEncoderDecoder {
+    /**
+     * Sets the number of bits per pixel and tileset format to be used, as well
+     * as the initial values for the tile, x, y, and bitplane when encoding or
+     * decoding.
+     * 
+     * @param bpp the number of bits per pixel of the tileset or tilesets to be
+     *        encoded or decoded.
+     * @param tileset_format the tileset format of the tileset or tilesets to be
+     *        encoded or decoded.
+     * @param initial_tile the initial tile when encoding or decoding.
+     * @param initial_x the initial x value in a tile when encoding or decoding.
+     * @param initial_y the initial y value in a tile when encoding or decoding.
+     * @param initial_bitplane the initial bitplane when encoding or decoding.
+     */
+    public TilesetEncoderDecoder(
+        int bpp, int tileset_format,
+        int initial_tile, int initial_x, int initial_y, int initial_bitplane) {
+      bpp_ = bpp;
+      tileset_format_ = tileset_format;
+      initial_tile_ = initial_tile;
+      initial_x_ = initial_x;
+      initial_y_ = initial_y;
+      initial_bitplane_ = initial_bitplane;
+    }
+    
+    /**
+     * Encodes the given tileset into an array of bytes.
+     * 
+     * @param tileset the tileset to encode.
+     * @return the array of bytes resulting from the encoding of the tileset.
+     */
+    public byte[] encode(Tileset tileset) {
+      // the number of tiles is limited such that num_bits will fit in an int
+      int num_bits = tileset.getNumberOfTiles() * Tileset.bitsPerTile(bpp_);
+      int num_bytes = num_bits / 8;
+      // add an extra byte if there will be remainder bits (but not a full byte)
+      if (num_bits % 8 != 0) { num_bytes++; }
       
-      // advance the pixel coordinates and bitplane based on the bitplane format
-      switch (tileset.getBitplaneFormat()) {
-        // for serial: bitplane (MSB to LSB) -> x -> y -> tile
-        case Tileset.BITPLANE_SERIAL:
-          bitplane--;
-          if (bitplane < 0) { bitplane = tileset.getBPP() - 1; x++; }
-          if (x >= Tileset.TILE_WIDTH) { x = 0; y++; }
-          if (y >= Tileset.TILE_HEIGHT) { y = 0; tile++; }
-          break;
-        // for planar: x -> y -> bitplane (LSB to MSB) -> tile
-        case Tileset.BITPLANE_PLANAR:
-          x++;
-          if (x >= Tileset.TILE_WIDTH) { x = 0; y++; }
-          if (y >= Tileset.TILE_HEIGHT) { y = 0; bitplane++; }
-          if (bitplane >= tileset.getBPP()) { bitplane = 0; tile++; }
-          break;
-        // for intertwined: x -> bitplane (LSB to MSB) -> y -> tile
-        case Tileset.BITPLANE_INTERTWINED:
-          x++;
-          if (x >= Tileset.TILE_WIDTH) { x = 0; bitplane++; }
-          if (bitplane >= tileset.getBPP()) { bitplane = 0; y++; }
-          if (y >= Tileset.TILE_HEIGHT) { y = 0; tile++; }
-          break;
+      byte[] tileset_data = new byte[num_bytes];
+      
+      initializeCoordinates();
+      // begin encoding each bit we need to
+      for (int bit = 0; bit < num_bits; bit++) {
+        // if the bit for the chosen bitplane in the pixel index is 1...
+        if ((tileset.getPixelIndex(tile_, x_, y_) & (1 << bitplane_)) != 0) {
+          tileset_data[bit / 8] |= (128 >> (bit % 8));  // ... then encode a 1
+        }
+        
+        incrementCoordinates();
       }
+      
+      return tileset_data;
     }
     
-    return tileset;
+    /**
+     * Decodes the given array of bytes into a tileset.
+     * 
+     * @param tileset_data the array of bytes to decode.
+     * @return the tileset resulting from the decoding of the given data.
+     */
+    public Tileset decode(byte[] tileset_data) {
+      // the number of tiles is limited such that num_bits will fit in an int
+      int num_bits = tileset_data.length * 8;
+      int bits_per_tile = Tileset.bitsPerTile(bpp_);
+      int num_tiles = num_bits / bits_per_tile;
+      // add an extra tile if there will be remainder bits (but not a full tile)
+      if (num_bits % bits_per_tile != 0) { num_tiles++; }
+      
+      Tileset tileset = new Tileset(num_tiles, bpp_, tileset_format_);
+      
+      initializeCoordinates();
+      
+      // begin decoding each bit we need to
+      for (int bit = 0; bit < num_bits; bit++) {
+        // if the current bit is a 1...
+        if ((tileset_data[bit / 8] & (128 >> (bit % 8))) != 0) {
+          // ... then set the corresponding bit in the tileset
+          int new_index = tileset.getPixelIndex(tile_, x_, y_) |
+                          (1 << bitplane_);
+          tileset.setPixelIndex(tile_, x_, y_, new_index);
+        }  // else, there should be a 0 by default (so we can just skip it)
+        
+        incrementCoordinates();
+      }
+      
+      return tileset;
+    }
+    
+    /**
+     * Advances the coordinates (tile, x, y, and bitplane) for the next bit.
+     * This is the only method that needs to be completed by an extending class.
+     */
+    protected abstract void incrementCoordinates();
+    
+    private void initializeCoordinates() {
+      tile_ = initial_tile_;
+      x_ = initial_x_;
+      y_ = initial_y_;
+      bitplane_ = initial_bitplane_;
+    }
+    
+    // coordinates used during encoding and decoding
+    protected int tile_;
+    protected int x_;
+    protected int y_;
+    protected int bitplane_;
+    // bpp and tileset format
+    protected final int bpp_;
+    protected final int tileset_format_;
+    // initial coordinate values
+    protected final int initial_tile_;
+    protected final int initial_x_;
+    protected final int initial_y_;
+    protected final int initial_bitplane_;
+  }
+  
+  /** A class that can encode and decode tilesets using the
+   {@link Tileset#SERIAL_FORMAT} tileset format. */
+  private static final class SerialFormatEncoderDecoder
+      extends TilesetEncoderDecoder {
+    /**
+     * Performs the initial setup needed before encoding or decoding tilesets
+     * using the {@link Tileset#SERIAL_FORMAT} tileset format and the given
+     * number of bits per pixel.
+     * 
+     * @param bpp the number of bits per pixel of the tileset or tilesets to be
+     *        encoded or decoded.
+     */
+    public SerialFormatEncoderDecoder(int bpp) {
+      // start at tile = 0, x = 0, y = 0, bitplane = bpp - 1 (most significant)
+      super(bpp, Tileset.SERIAL_FORMAT, 0, 0, 0, bpp - 1);
+    }
+    
+    @Override
+    protected void incrementCoordinates() {
+      // bitplane (MSB to LSB) -> x -> y -> tile
+      bitplane_--;
+      if (bitplane_ < 0) { bitplane_ = initial_bitplane_; x_++; }
+      if (x_ >= Tileset.TILE_WIDTH) { x_ = 0; y_++; }
+      if (y_ >= Tileset.TILE_HEIGHT) { y_ = 0; tile_++; }
+    }
+  }
+  
+  /** A class that can encode and decode tilesets using the
+   {@link Tileset#PLANAR_FORMAT} tileset format. */
+  private static final class PlanarFormatEncoderDecoder
+      extends TilesetEncoderDecoder {
+    /**
+     * Performs the initial setup needed before encoding or decoding tilesets
+     * using the {@link Tileset#PLANAR_FORMAT} tileset format and the given
+     * number of bits per pixel.
+     * 
+     * @param bpp the number of bits per pixel of the tileset or tilesets to be
+     *        encoded or decoded.
+     */
+    public PlanarFormatEncoderDecoder(int bpp) {
+      // start at tile = 0, x = 0, y = 0, bitplane = 0 (least significant)
+      super(bpp, Tileset.PLANAR_FORMAT, 0, 0, 0, 0);
+    }
+    
+    @Override
+    protected void incrementCoordinates() {
+      // x -> y -> bitplane(LSB to MSB) -> tile
+      x_++;
+      if (x_ >= Tileset.TILE_WIDTH) { x_ = 0; y_++; }
+      if (y_ >= Tileset.TILE_HEIGHT) { y_ = 0; bitplane_++; }
+      if (bitplane_ >= bpp_) { bitplane_ = 0; tile_++; }
+    }
+  }
+  
+  /** A class that can encode and decode tilesets using the
+   {@link Tileset#LINEAR_INTERTWINED_FORMAT} tileset format. */
+  private static final class LinearIntertwinedFormatEncoderDecoder
+      extends TilesetEncoderDecoder {
+    /**
+     * Performs the initial setup needed before encoding or decoding tilesets
+     * using the {@link Tileset#LINEAR_INTERTWINED_FORMAT} tileset format and
+     * the given number of bits per pixel.
+     * 
+     * @param bpp the number of bits per pixel of the tileset or tilesets to be
+     *        encoded or decoded.
+     */
+    public LinearIntertwinedFormatEncoderDecoder(int bpp) {
+      // start at tile = 0, x = 0, y = 0, bitplane = 0 (least significant)
+      super(bpp, Tileset.LINEAR_INTERTWINED_FORMAT, 0, 0, 0, 0);
+    }
+    
+    @Override
+    protected void incrementCoordinates() {
+      // x -> bitplane (LSB to MSB) -> y -> tile
+      x_++;
+      if (x_ >= Tileset.TILE_WIDTH) { x_ = 0; bitplane_++; }
+      if (bitplane_ >= bpp_) { bitplane_ = 0; y_++; }
+      if (y_ >= Tileset.TILE_HEIGHT) { y_ = 0; tile_++; }
+    }
+  }
+  
+  /** A class that can encode and decode tilesets using the
+   {@link Tileset#PAIRED_INTERTWINED_FORMAT} tileset format. */
+  private static final class PairedIntertwinedFormatEncoderDecoder
+      extends TilesetEncoderDecoder {
+    /**
+     * Performs the initial setup needed before encoding or decoding tilesets
+     * using the {@link Tileset#PAIRED_INTERTWINED_FORMAT} tileset format and
+     * the given number of bits per pixel.
+     * 
+     * @param bpp the number of bits per pixel of the tileset or tilesets to be
+     *        encoded or decoded.
+     */
+    public PairedIntertwinedFormatEncoderDecoder(int bpp) {
+      // start at tile = 0, x = 0, y = 0, bitplane = 0 (least significant)
+      super(bpp, Tileset.PAIRED_INTERTWINED_FORMAT, 0, 0, 0, 0);
+    }
+    
+    @Override
+    protected void incrementCoordinates() {
+      // x -> bitplane (LSB to MSB, within pair) -> y -> bitplane pair -> tile
+      x_++;
+      if (x_ >= Tileset.TILE_WIDTH) {
+        x_ = 0;
+        
+        if (bitplane_ % 2 == 0) {
+          if (bitplane_ == bpp_ - 1) {
+            y_++;
+          } else {
+            bitplane_++;
+          }
+        } else {
+          bitplane_--;
+          y_++;
+        }
+      }
+      if (y_ >= Tileset.TILE_HEIGHT) {
+        y_ = 0;
+        bitplane_ += 2;
+      }
+      if (bitplane_ >= bpp_) { bitplane_ = 0; tile_++; }
+    }
   }
 }

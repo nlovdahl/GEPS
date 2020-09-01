@@ -286,10 +286,8 @@ public final class TilesetView extends JPanel implements Scrollable {
     }
   }
   
-  /**
-   * The string for a property change event which denotes a change in the state
-   * of the tileset.
-   */
+  /** The string for a property change event which denotes a change in the state
+   of the tileset. */
   public static final String NEW_TILESET_STATE = "tilesetStateUpdate";
   
   private int last_tileset_x_;
