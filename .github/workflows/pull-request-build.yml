@@ -1,0 +1,15 @@
+name: Pull Request Build
+
+on: [pull_request]
+
+jobs:
+  pull_request_build:
+    runs_on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+    - name: JDK Setup
+      uses: actions/setup-java@v1
+      
+    - name: Build Pull Request
+      run: mvn -B package --file pom.xml

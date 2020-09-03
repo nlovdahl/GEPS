@@ -1,0 +1,17 @@
+name: Development Build
+
+on:
+  push:
+    branches: [development]
+
+jobs:
+  development_build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: JDK Setup
+      uses: actions/setup-java@v1
+      
+    - name: Build Development
+      run: mvn -B package --file pom.xml

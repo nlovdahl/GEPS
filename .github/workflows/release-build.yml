@@ -1,0 +1,25 @@
+name: Release Build
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  release_build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+    - name: JDK Setup
+      uses: actions/setup-java@v1
+      with:
+        server-di: github
+        settings-path: ${{ github.workspace }}
+    
+    - name: Build Release
+      run: mvn -B package --file pom.xlm
+      
+    - name: Publish Release Build
+      run: mvn deploy -s $GITHUB_WORKSPACE/settings.xml
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
