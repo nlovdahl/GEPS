@@ -1,24 +1,27 @@
 name: Release Build
 
 on:
+  workflow_dispatch:
   release:
-    types: [created]
+    types:
+      - created
 
 jobs:
   release_build:
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v2
     - name: JDK Setup
       uses: actions/setup-java@v1
       with:
+        java-version: 1.8
         server-di: github
         settings-path: ${{ github.workspace }}
-    
+
     - name: Build Release
       run: mvn -B package --file pom.xlm
-      
+
     - name: Publish Release Build
       run: mvn deploy -s $GITHUB_WORKSPACE/settings.xml
       env:
