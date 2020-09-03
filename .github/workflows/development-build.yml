@@ -1,7 +1,6 @@
 name: Development Build
 
-on:
-  workflow_dispatch:
+on:]
   push:
     branches:
       - development
