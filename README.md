@@ -1,4 +1,7 @@
 # GEPS
+![Release Build](https://github.com/nlovdahl/GEPS/workflows/Release%20Build/badge.svg)
+![Development Build](https://github.com/nlovdahl/GEPS/workflows/Development%20Build/badge.svg)
+
 GEPS is a Graphics Editing Program for SNES homebrew development. GEPS can create, load, edit, and save tilesets and palettes that can be used on SNES hardware. GEPS supports multiple tileset formats (serial, planar, and intertwined) and a varying number of bits per pixel (1, 2, 3, 4, and 8). Tilesets can be viewed and edited using different subpalettes (depending on the number of bits per pixel being used).
 
 For the full changelog for GEPS, see `CHANGELOG.md`.
