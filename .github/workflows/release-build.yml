@@ -19,7 +19,7 @@ jobs:
         settings-path: ${{ github.workspace }}
 
     - name: Cache Maven Packages
-      uses: actions/cache@2
+      uses: actions/cache@v2
       with:
         path: ~/.m2
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
