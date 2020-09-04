@@ -18,6 +18,13 @@ jobs:
         server-di: github
         settings-path: ${{ github.workspace }}
 
+    - name: Cache Maven Packages
+      uses: actions/cache@2
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+
     - name: Build Release
       run: mvn -B package --file pom.xlm
 

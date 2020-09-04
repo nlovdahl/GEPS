@@ -16,5 +16,12 @@ jobs:
       with:
         java-version: 14 # pom.xml specifies OpenJDK version 14
 
+    - name: Cache Maven Packages
+      uses: actions/cache@2
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+
     - name: Build Development
       run: mvn -B package --file pom.xml
