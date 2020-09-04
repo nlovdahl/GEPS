@@ -237,15 +237,30 @@ public class PaletteTest {
   
   /**
    * A newly constructed palette should have some default colors (what these
-   * colors are is not important); no colors in a new palette should be null.
+   * colors are is not important); no colors in a new palette should be null and
+   * each color should be the same as if it were clamped. That is, all entries
+   * in a new palette should be non-null, clamped values.
    */
   @Test
-  public void testPaletteConstructorNoNulls() {
+  public void testPaletteConstructorColors() {
     Palette palette = new Palette();
     for (int index = 0; index < Palette.PALETTE_MAX_SIZE; index++) {
       assertNotNull(palette.getColor(index),
                     "Null found at index " + Integer.toString(index) + ".");
+      assertEquals(Palette.clampColor(palette.getColor(index)),
+                   palette.getColor(index),
+                   "Unclamped value at index " + Integer.toString(index) + ".");
     }
+  }
+  
+  /**
+   * When the copy constructor is used, providing null for the palette to be
+   * copied should throw the appropriate exception.
+   */
+  @Test
+  public void testPaletteCopyConstructorNullPalette() {
+    assertThrows(NullPointerException.class, () -> new Palette(null),
+                 "No NullPointerException thrown for null parameter.");
   }
   
   /**
