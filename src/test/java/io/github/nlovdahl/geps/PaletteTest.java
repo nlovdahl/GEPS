@@ -35,73 +35,64 @@ import java.awt.Color;
  */
 public class PaletteTest {
   /**
-   * {@link Palette#clampColor(java.awt.Color)} should reject null as a
-   * parameter and throw the appropriate exception.
-   */
-  @Test
-  public void testClampNullColor() {
-    assertThrows(NullPointerException.class, () -> Palette.clampColor(null),
-                 "No NullPointerException thrown for null parameter.");
-  }
-  
-  /**
-   * The {@link Palette#clampColor(int, int, int)} and
-   * {@link Palette#clampColor(java.awt.Color)} methods should set all of the
+   * The {@link Palette#clampColor(int, int, int)} method should set all of the
    * bits in the alpha channel and clear the last three bits of each color
    * channel of the given color.
    */
   @Test
-  public void testClampColor() {
+  public void testClampColorWithRGB() {
     for (Color test_color : TEST_COLORS) {
-      Color expected_color = new Color((test_color.getRGB() | 0xFF000000)
-                                       & 0xFFF8F8F8, true);
-      Color actual_color_rgb = Palette.clampColor(
-        test_color.getRed(), test_color.getGreen(), test_color.getBlue());
-      Color actual_color_color = Palette.clampColor(test_color);
+      Color expected_color =
+        new Color((test_color.getRGB() | 0xFF000000) & 0xFFF8F8F8, true);
+      Color actual_color = Palette.clampColor(test_color.getRed(),
+                                              test_color.getGreen(),
+                                              test_color.getBlue());
       
-      // using RGB ints
       assertAll(
-        () -> assertEquals(
-                expected_color.getRed(), actual_color_rgb.getRed(),
-                "Failure to clamp red channel with RGB parameters."),
-        () -> assertEquals(
-                expected_color.getGreen(), actual_color_rgb.getGreen(),
-                "Failure to clamp green channel with RGB parameters."),
-        () -> assertEquals(
-                expected_color.getBlue(), actual_color_rgb.getBlue(),
-                "Failure to clamp blue channel with RGB parameters."),
-        () -> assertEquals(
-                expected_color.getAlpha(), actual_color_rgb.getAlpha(),
-                "Failure to clamp alpha channel with RGB parameters.")
-      );
-      
-      // using Colors
-      assertAll(
-        () -> assertEquals(
-                expected_color.getRed(), actual_color_color.getRed(),
-                "Failure to clamp red channel with Color parameter."),
-        () -> assertEquals(
-                expected_color.getGreen(), actual_color_color.getGreen(),
-                "Failure to clamp green channel with Color parameter."),
-        () -> assertEquals(
-                expected_color.getBlue(), actual_color_color.getBlue(),
-                "Failure to clamp blue channel with Color parameter."),
-        () -> assertEquals(
-                expected_color.getAlpha(), actual_color_color.getAlpha(),
-                "Failure to clamp alpha channel with Color parameter.")
+        () -> assertEquals(expected_color.getRed(), actual_color.getRed(),
+                           "Failure to clamp red channel."),
+        () -> assertEquals(expected_color.getGreen(), actual_color.getGreen(),
+                           "Failure to clamp green channel."),
+        () -> assertEquals(expected_color.getBlue(), actual_color.getBlue(),
+                           "Failure to clamp blue channel."),
+        () -> assertEquals(expected_color.getAlpha(), actual_color.getAlpha(),
+                           "Failure to clamp alpha channel.")
       );
     }
   }
   
   /**
-   * {@link Palette#setColor(int, java.awt.Color)} should reject null as a
+   * The {@link Palette#clampColor(java.awt.Color)} method should set all of the
+   * bits in the alpha channel and clear the last three bits of each color
+   * channel of the given color.
+   */
+  @Test
+  public void testClampColorWithColor() {
+    for (Color test_color : TEST_COLORS) {
+      Color expected_color =
+        new Color((test_color.getRGB() | 0xFF000000) & 0xFFF8F8F8, true);
+      Color actual_color = Palette.clampColor(test_color);
+      
+      assertAll(
+        () -> assertEquals(expected_color.getRed(), actual_color.getRed(),
+                           "Failure to clamp red channel."),
+        () -> assertEquals(expected_color.getGreen(), actual_color.getGreen(),
+                           "Failure to clamp green channel."),
+        () -> assertEquals(expected_color.getBlue(), actual_color.getBlue(),
+                           "Failure to clamp blue channel."),
+        () -> assertEquals(expected_color.getAlpha(), actual_color.getAlpha(),
+                           "Failure to clamp alpha channel.")
+      );
+    }
+  }
+  
+  /**
+   * {@link Palette#clampColor(java.awt.Color)} should reject null as a
    * parameter and throw the appropriate exception.
    */
   @Test
-  public void testSetNullColor() {
-    Palette palette = new Palette();
-    
-    assertThrows(NullPointerException.class, () -> palette.setColor(0, null),
+  public void testClampColorWithNull() {
+    assertThrows(NullPointerException.class, () -> Palette.clampColor(null),
                  "No NullPointerException thrown for null parameter.");
   }
   
@@ -113,105 +104,127 @@ public class PaletteTest {
   public void testGetColorIndexes() {
     Palette palette = new Palette();
     
-    assertAll(
-      () -> assertThrows(
-              ArrayIndexOutOfBoundsException.class,
-              () -> palette.getColor(-1),
-              "No ArrayIndexOutOfBoundsException thrown for invalid index -1."),
-      () -> assertDoesNotThrow(
-              () -> palette.getColor(0),
-              "Exception thrown for valid index 0."),
-      () -> assertDoesNotThrow(
-              () -> palette.getColor(Palette.PALETTE_MAX_SIZE / 2),
-              "Exception thrown for valid index " +
-              Integer.toString(Palette.PALETTE_MAX_SIZE / 2) + "."),
-      () -> assertDoesNotThrow(
-              () -> palette.getColor(Palette.PALETTE_MAX_SIZE - 1),
-              "Exception thrown for valid index " +
-              Integer.toString(Palette.PALETTE_MAX_SIZE - 1) + "."),
-      () -> assertThrows(
-              ArrayIndexOutOfBoundsException.class,
-              () -> palette.getColor(Palette.PALETTE_MAX_SIZE),
-              "No ArrayIndexOutOfBoundsException thrown for invalid index " +
-              Integer.toString(Palette.PALETTE_MAX_SIZE) + ".")
+    assertThrows(
+      ArrayIndexOutOfBoundsException.class,
+      () -> palette.getColor(-1),
+      "No ArrayIndexOutOfBoundsException thrown for invalid index -1."
+    );
+    assertDoesNotThrow(
+      () -> palette.getColor(0),
+      "Exception thrown for valid index 0."
+    );
+    assertDoesNotThrow(
+      () -> palette.getColor(Palette.PALETTE_MAX_SIZE / 2),
+      "Exception thrown for valid index " +
+      Integer.toString(Palette.PALETTE_MAX_SIZE / 2) + "."
+    );
+    assertDoesNotThrow(
+      () -> palette.getColor(Palette.PALETTE_MAX_SIZE - 1),
+      "Exception thrown for valid index " +
+      Integer.toString(Palette.PALETTE_MAX_SIZE - 1) + "."
+    );
+    assertThrows(
+      ArrayIndexOutOfBoundsException.class,
+      () -> palette.getColor(Palette.PALETTE_MAX_SIZE),
+      "No ArrayIndexOutOfBoundsException thrown for invalid index " +
+      Integer.toString(Palette.PALETTE_MAX_SIZE) + "."
     );
   }
   
   /**
-   * The {@link Palette#setColor(int, int, int, int)} and
-   * {@link Palette#setColor(int, java.awt.Color)} methods should accept valid
-   * indexes as parameters, but throw an exception for invalid indexes - this
-   * test is for {@link java.awt.Color} parameters. This test does not evaluate
-   * whether the method works correctly with respect to the values to be set to.
+   * The {@link Palette#setColor(int, int, int, int)} method should accept valid
+   * indexes as parameters, but throw an exception for invalid indexes. This
+   * test does not evaluate whether the method works correctly with respect to
+   * the values to be set to.
    */
   @Test
-  public void testSetColorIndexes() {
+  public void testSetColorIndexesWithRGB() {
     Palette palette = new Palette();
     
-    // using RGB ints
-    assertAll(
-      () -> assertThrows(
-              ArrayIndexOutOfBoundsException.class,
-              () -> palette.setColor(-1, 0, 0, 0),
-              "No ArrayIndexOutOfBoundsException thrown for invalid index -1 " +
-              "with RGB parameters."),
-      () -> assertDoesNotThrow(
-              () -> palette.setColor(0, 0, 0, 0),
-              "Exception thrown for valid index 0 with RGB parameters."),
-      () -> assertDoesNotThrow(
-              () -> palette.setColor(Palette.PALETTE_MAX_SIZE / 2, 0, 0, 0),
-              "Exception thrown for valid index " +
-              Integer.toString(Palette.PALETTE_MAX_SIZE / 2) +
-              " with RGB parameters."),
-      () -> assertDoesNotThrow(
-              () -> palette.setColor(Palette.PALETTE_MAX_SIZE - 1, 0, 0, 0),
-              "Exception thrown for valid index " +
-              Integer.toString(Palette.PALETTE_MAX_SIZE - 1) +
-              " with RGB parameters."),
-      () -> assertThrows(
-              ArrayIndexOutOfBoundsException.class,
-              () -> palette.setColor(Palette.PALETTE_MAX_SIZE, 0, 0, 0),
-              "No ArrayIndexOutOfBoundsException thrown for invalid index " +
-              Integer.toString(Palette.PALETTE_MAX_SIZE) +
-              " with RGB parameters.")
+    assertThrows(
+      ArrayIndexOutOfBoundsException.class,
+      () -> palette.setColor(-1, 0, 0, 0),
+      "No ArrayIndexOutOfBoundsException thrown for invalid index -1."
     );
-    // using Colors
-    assertAll(
-      () -> assertThrows(
-              ArrayIndexOutOfBoundsException.class,
-              () -> palette.setColor(-1, Color.BLACK),
-              "No ArrayIndexOutOfBoundsException thrown for invalid index -1 " +
-              "with Color parameter."),
-      () -> assertDoesNotThrow(
-              () -> palette.setColor(0, Color.BLACK),
-              "Exception thrown for valid index 0 with Color parameter."),
-      () -> assertDoesNotThrow(
-              () -> palette.setColor(Palette.PALETTE_MAX_SIZE / 2, Color.BLACK),
-              "Exception thrown for valid index " +
-              Integer.toString(Palette.PALETTE_MAX_SIZE / 2) +
-              " with Color parameter."),
-      () -> assertDoesNotThrow(
-              () -> palette.setColor(Palette.PALETTE_MAX_SIZE - 1, Color.BLACK),
-              "Exception thrown for valid index " +
-              Integer.toString(Palette.PALETTE_MAX_SIZE - 1) +
-              " with Color parameter."),
-      () -> assertThrows(
-              ArrayIndexOutOfBoundsException.class,
-              () -> palette.setColor(Palette.PALETTE_MAX_SIZE, Color.BLACK),
-              "No ArrayIndexOutOfBoundsException thrown for invalid index " +
-              Integer.toString(Palette.PALETTE_MAX_SIZE) +
-              " with Color parameter.")
+    assertDoesNotThrow(
+      () -> palette.setColor(0, 0, 0, 0),
+      "Exception thrown for valid index 0."
     );
+    assertDoesNotThrow(
+      () -> palette.setColor(Palette.PALETTE_MAX_SIZE / 2, 0, 0, 0),
+      "Exception thrown for valid index " +
+      Integer.toString(Palette.PALETTE_MAX_SIZE / 2) + "."
+    );
+    assertDoesNotThrow(
+      () -> palette.setColor(Palette.PALETTE_MAX_SIZE - 1, 0, 0, 0),
+      "Exception thrown for valid index " +
+      Integer.toString(Palette.PALETTE_MAX_SIZE - 1) + "."
+    );
+    assertThrows(
+      ArrayIndexOutOfBoundsException.class,
+      () -> palette.setColor(Palette.PALETTE_MAX_SIZE, 0, 0, 0),
+      "No ArrayIndexOutOfBoundsException thrown for invalid index " +
+      Integer.toString(Palette.PALETTE_MAX_SIZE) + "."
+    );
+  }
+  
+  /**
+   * The {@link Palette#setColor(int, java.awt.Color)} method should accept
+   * valid indexes as parameters, but throw an exception for invalid indexes.
+   * This test does not evaluate whether the method works correctly with respect
+   * to the values to be set to.
+   */
+  @Test
+  public void testSetColorIndexesWithColor() {
+    Palette palette = new Palette();
+    
+    assertThrows(
+      ArrayIndexOutOfBoundsException.class,
+      () -> palette.setColor(-1, Color.BLACK),
+      "No ArrayIndexOutOfBoundsException thrown for invalid index -1."
+    );
+    assertDoesNotThrow(
+      () -> palette.setColor(0, Color.BLACK),
+      "Exception thrown for valid index 0."
+    );
+    assertDoesNotThrow(
+      () -> palette.setColor(Palette.PALETTE_MAX_SIZE / 2, Color.BLACK),
+        "Exception thrown for valid index " +
+        Integer.toString(Palette.PALETTE_MAX_SIZE / 2) + "."
+    );
+    assertDoesNotThrow(
+      () -> palette.setColor(Palette.PALETTE_MAX_SIZE - 1, Color.BLACK),
+      "Exception thrown for valid index " +
+      Integer.toString(Palette.PALETTE_MAX_SIZE - 1) + "."
+    );
+    assertThrows(
+      ArrayIndexOutOfBoundsException.class,
+      () -> palette.setColor(Palette.PALETTE_MAX_SIZE, Color.BLACK),
+      "No ArrayIndexOutOfBoundsException thrown for invalid index " +
+      Integer.toString(Palette.PALETTE_MAX_SIZE) + "."
+    );
+  }
+  
+  /**
+   * {@link Palette#setColor(int, java.awt.Color)} should reject null as a
+   * parameter and throw the appropriate exception.
+   */
+  @Test
+  public void testSetColorWithNull() {
+    Palette palette = new Palette();
+    
+    assertThrows(NullPointerException.class, () -> palette.setColor(0, null),
+                 "No NullPointerException thrown for null parameter.");
   }
   
   /**
    * The changes to the colors in the palette by the
-   * {@link Palette#setColor(int, java.awt.Color)} method should be clamped, and
+   * {@link Palette#setColor(int, int, int, int) } method should be clamped, and
    * the {@link Palette#getColor(int)} method should provide the expected
    * results for corresponding indexes.
    */
   @Test
-  public void testGetAndSetColorValues() {
+  public void testGetAndSetColorWithRGB() {
     Palette palette = new Palette();
     
     // go through the both the entire palette and all of the test colors
@@ -221,17 +234,36 @@ public class PaletteTest {
       Color test_color = TEST_COLORS[index % TEST_COLORS.length];
       Color expected_color = Palette.clampColor(test_color);
       
-      // using RGB ints
       palette.setColor(test_index, test_color.getRed(), test_color.getGreen(),
                        test_color.getBlue());
-      assertEquals(expected_color, palette.getColor(test_index),
-                   "Get and set disagree using RGB parameters at index " +
-                   Integer.toString(index) + ".");
-      // using Colors
+      assertEquals(
+        expected_color, palette.getColor(test_index),
+        "Get and set mismatch at index " + Integer.toString(index) + "."
+      );
+    }
+  }
+  
+  /**
+   * The changes to the colors in the palette by the
+   * {@link Palette#setColor(int, java.awt.Color)} method should be clamped, and
+   * the {@link Palette#getColor(int)} method should provide the expected
+   * results for corresponding indexes.
+   */
+  @Test
+  public void testGetAndSetColorWithColor() {
+    Palette palette = new Palette();
+    
+    // go through the both the entire palette and all of the test colors
+    int limit = Math.max(TEST_COLORS.length, Palette.PALETTE_MAX_SIZE);
+    for (int index = 0; index < limit; index++) {
+      int test_index = index % Palette.PALETTE_MAX_SIZE;
+      Color test_color = TEST_COLORS[index % TEST_COLORS.length];
+      Color expected_color = Palette.clampColor(test_color);
+      
       palette.setColor(test_index , test_color);
-      assertEquals(expected_color, palette.getColor(test_index),
-                   "Get and set disagree using Color parameter at index " +
-                   Integer.toString(index) + ".");
+      assertEquals(
+        expected_color, palette.getColor(test_index),
+        "Get and set mismatch at index " + Integer.toString(index) + ".");
     }
   }
   
@@ -258,7 +290,7 @@ public class PaletteTest {
    * copied should throw the appropriate exception.
    */
   @Test
-  public void testPaletteCopyConstructorNullPalette() {
+  public void testPaletteCopyConstructorWithNull() {
     assertThrows(NullPointerException.class, () -> new Palette(null),
                  "No NullPointerException thrown for null parameter.");
   }
@@ -367,17 +399,6 @@ public class PaletteTest {
   
   /**
    * The {@link Palette#getSNESColorCodeString(java.awt.Color)} method should
-   * reject null as a parameter and throw the appropriate exception.
-   */
-  @Test
-  public void testGetSNESNullColorCodeString() {
-    assertThrows(NullPointerException.class,
-                 () -> Palette.getSNESColorCodeString(null),
-                 "No NullPointerException thrown for null parameter.");
-  }
-  
-  /**
-   * The {@link Palette#getSNESColorCodeString(java.awt.Color)} method should
    * provide the number that would be given by the
    * {@link Palette#getSNESColorCode(java.awt.Color)} method, but as a String in
    * a hexadecimal format. This format should be of the form (0xHHHH) where the
@@ -411,6 +432,17 @@ public class PaletteTest {
       () -> assertEquals("0x4DF6",
                          Palette.getSNESColorCodeString(new Color(0xB57C9F)))
     );
+  }
+  
+  /**
+   * The {@link Palette#getSNESColorCodeString(java.awt.Color)} method should
+   * reject null as a parameter and throw the appropriate exception.
+   */
+  @Test
+  public void testGetSNESColorCodeStringWithNull() {
+    assertThrows(NullPointerException.class,
+                 () -> Palette.getSNESColorCodeString(null),
+                 "No NullPointerException thrown for null parameter.");
   }
   
   /**
@@ -455,6 +487,16 @@ public class PaletteTest {
                          Palette.contrastColor(new Color(0x0000FF)),
                          "Expected white contrast with blue.")
     );
+  }
+  
+  /**
+   * The {@link Palette#contrastColor(java.awt.Color)} method should reject null 
+   * as a parameter and throw the appropriate exception.
+   */
+  public void testContrastColorWithNull() {
+    assertThrows(NullPointerException.class,
+                 () -> Palette.contrastColor(null),
+                 "No NullPointerException thrown for null parameter.");
   }
   
   /**
