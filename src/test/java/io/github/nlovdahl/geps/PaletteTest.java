@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 import java.awt.Color;
+import java.util.List;
 
 /**
  * Unit tests for {@link Palette}. Note that some of these tests will use colors
@@ -228,10 +229,10 @@ public class PaletteTest {
     Palette palette = new Palette();
     
     // go through the both the entire palette and all of the test colors
-    int limit = Math.max(TEST_COLORS.length, Palette.PALETTE_MAX_SIZE);
+    int limit = Math.max(TEST_COLORS.size(), Palette.PALETTE_MAX_SIZE);
     for (int index = 0; index < limit; index++) {
       int test_index = index % Palette.PALETTE_MAX_SIZE;
-      Color test_color = TEST_COLORS[index % TEST_COLORS.length];
+      Color test_color = TEST_COLORS.get(index % TEST_COLORS.size());
       Color expected_color = Palette.clampColor(test_color);
       
       palette.setColor(test_index, test_color.getRed(), test_color.getGreen(),
@@ -254,16 +255,17 @@ public class PaletteTest {
     Palette palette = new Palette();
     
     // go through the both the entire palette and all of the test colors
-    int limit = Math.max(TEST_COLORS.length, Palette.PALETTE_MAX_SIZE);
+    int limit = Math.max(TEST_COLORS.size(), Palette.PALETTE_MAX_SIZE);
     for (int index = 0; index < limit; index++) {
       int test_index = index % Palette.PALETTE_MAX_SIZE;
-      Color test_color = TEST_COLORS[index % TEST_COLORS.length];
+      Color test_color = TEST_COLORS.get(index % TEST_COLORS.size());
       Color expected_color = Palette.clampColor(test_color);
       
       palette.setColor(test_index , test_color);
       assertEquals(
         expected_color, palette.getColor(test_index),
-        "Get and set mismatch at index " + Integer.toString(index) + ".");
+        "Get and set mismatch at index " + Integer.toString(index) + "."
+      );
     }
   }
   
@@ -304,7 +306,9 @@ public class PaletteTest {
     // create and fill out a starting palette
     Palette starting_palette = new Palette();
     for (int index = 0; index < Palette.PALETTE_MAX_SIZE; index++) {
-      starting_palette.setColor(index, TEST_COLORS[index % TEST_COLORS.length]);
+      starting_palette.setColor(
+        index, TEST_COLORS.get(index % TEST_COLORS.size())
+      );
     }
     
     // create another palette and check that it has the same colors
@@ -328,19 +332,23 @@ public class PaletteTest {
     // create and fill out a starting palette, then make a copy
     Palette starting_palette = new Palette();
     for (int index = 0; index < Palette.PALETTE_MAX_SIZE; index++) {
-      starting_palette.setColor(index, TEST_COLORS[index % TEST_COLORS.length]);
+      starting_palette.setColor(
+        index, TEST_COLORS.get(index % TEST_COLORS.size())
+      );
     }
     Palette copied_palette = new Palette(starting_palette);
     
     // change the copied palette (just shift the colors)
     for (int index = 0; index < Palette.PALETTE_MAX_SIZE; index++) {
-      copied_palette.setColor(index,
-                              TEST_COLORS[(index + 1) % TEST_COLORS.length]);
+      copied_palette.setColor(
+        index, TEST_COLORS.get((index + 1) % TEST_COLORS.size())
+      );
     }
     // check that the starting palette has remained the same
     for (int index = 0; index < Palette.PALETTE_MAX_SIZE; index++) {
       Color expected_color = Palette.clampColor(
-        TEST_COLORS[index % TEST_COLORS.length]);
+        TEST_COLORS.get(index % TEST_COLORS.size())
+      );
       Color actual_color = starting_palette.getColor(index);
       assertEquals(expected_color, actual_color,
                    "Copied palette altered by change in starting palette at " +
@@ -349,13 +357,13 @@ public class PaletteTest {
     
     // change the starting palette
     for (int index = 0; index < Palette.PALETTE_MAX_SIZE; index++) {
-      starting_palette.setColor(index,
-                                TEST_COLORS[(index + 2) % TEST_COLORS.length]);
+      starting_palette.setColor(
+        index, TEST_COLORS.get((index + 2) % TEST_COLORS.size()));
     }
     // check that the copied palette has remained the same
     for (int index = 0; index < Palette.PALETTE_MAX_SIZE; index++) {
       Color expected_color = Palette.clampColor(
-        TEST_COLORS[(index + 1) % TEST_COLORS.length]);
+        TEST_COLORS.get((index + 1) % TEST_COLORS.size()));
       Color actual_color = copied_palette.getColor(index);
       assertEquals(expected_color, actual_color,
                    "Starting palette altered by change in copied palette at " +
@@ -520,7 +528,7 @@ public class PaletteTest {
    * Colors used for testing. The selection of these colors impacts the quality
    * of the coverage of the unit tests.
    */
-  private static final Color[] TEST_COLORS = {
+  private static final List<Color> TEST_COLORS = List.of(
     // simple colors
     Color.BLACK, Color.DARK_GRAY, Color.GRAY, Color.LIGHT_GRAY, Color.WHITE,
     Color.RED, Color.ORANGE, Color.YELLOW, Color.GREEN, Color.BLUE, Color.CYAN,
@@ -546,5 +554,5 @@ public class PaletteTest {
     new Color(0x2C34332D, true), new Color(0x2A12B4AA, true),
     new Color(0xB32FB56A, true), new Color(0x25016D99, true),
     new Color(0x9BE4A4C1, true)
-  };
+  );
 }
