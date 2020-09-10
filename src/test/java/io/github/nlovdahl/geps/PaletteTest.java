@@ -88,18 +88,18 @@ public class PaletteTest {
   }
   
   /**
-   * {@link Palette#clampColor(java.awt.Color)} should reject null as a
-   * parameter and throw the appropriate exception.
+   * {@link Palette#clampColor(java.awt.Color)} should reject null as an
+   * argument and throw the appropriate exception.
    */
   @Test
-  public void testClampColorWithNull() {
+  public void testClampColorNullArgument() {
     assertThrows(NullPointerException.class, () -> Palette.clampColor(null),
-                 "No NullPointerException thrown for null parameter.");
+                 "No NullPointerException thrown for null argument.");
   }
   
   /**
    * The {@link Palette#getColor(int)} method should accept valid indexes as
-   * parameters, but throw an exception for invalid indexes.
+   * arguments, but throw an exception for invalid indexes.
    */
   @Test
   public void testGetColorIndexes() {
@@ -134,7 +134,7 @@ public class PaletteTest {
   
   /**
    * The {@link Palette#setColor(int, int, int, int)} method should accept valid
-   * indexes as parameters, but throw an exception for invalid indexes. This
+   * indexes as arguments, but throw an exception for invalid indexes. This
    * test does not evaluate whether the method works correctly with respect to
    * the values to be set to.
    */
@@ -171,7 +171,7 @@ public class PaletteTest {
   
   /**
    * The {@link Palette#setColor(int, java.awt.Color)} method should accept
-   * valid indexes as parameters, but throw an exception for invalid indexes.
+   * valid indexes as arguments, but throw an exception for invalid indexes.
    * This test does not evaluate whether the method works correctly with respect
    * to the values to be set to.
    */
@@ -208,14 +208,14 @@ public class PaletteTest {
   
   /**
    * {@link Palette#setColor(int, java.awt.Color)} should reject null as a
-   * parameter and throw the appropriate exception.
+   * arguments and throw the appropriate exception.
    */
   @Test
-  public void testSetColorWithNull() {
+  public void testSetColorNullArgument() {
     Palette palette = new Palette();
     
     assertThrows(NullPointerException.class, () -> palette.setColor(0, null),
-                 "No NullPointerException thrown for null parameter.");
+                 "No NullPointerException thrown for null argument.");
   }
   
   /**
@@ -292,9 +292,9 @@ public class PaletteTest {
    * copied should throw the appropriate exception.
    */
   @Test
-  public void testPaletteCopyConstructorWithNull() {
+  public void testPaletteCopyConstructorNullArgument() {
     assertThrows(NullPointerException.class, () -> new Palette(null),
-                 "No NullPointerException thrown for null parameter.");
+                 "No NullPointerException thrown for null argument.");
   }
   
   /**
@@ -373,13 +373,13 @@ public class PaletteTest {
   
   /**
    * The {@link Palette#getSNESColorCode(java.awt.Color)} method should reject
-   * null as a parameter and throw the appropriate exception.
+   * null as an argument and throw the appropriate exception.
    */
   @Test
-  public void testGetSNESNullColorCode() {
+  public void testGetSNESColorCodeNullArgument() {
     assertThrows(NullPointerException.class,
                  () -> Palette.getSNESColorCode(null),
-                 "No NullPointerException thrown for null parameter.");
+                 "No NullPointerException thrown for null argument.");
   }
   
   /**
@@ -444,13 +444,13 @@ public class PaletteTest {
   
   /**
    * The {@link Palette#getSNESColorCodeString(java.awt.Color)} method should
-   * reject null as a parameter and throw the appropriate exception.
+   * reject null as an argument and throw the appropriate exception.
    */
   @Test
-  public void testGetSNESColorCodeStringWithNull() {
+  public void testGetSNESColorCodeStringNullArgument() {
     assertThrows(NullPointerException.class,
                  () -> Palette.getSNESColorCodeString(null),
-                 "No NullPointerException thrown for null parameter.");
+                 "No NullPointerException thrown for null argument.");
   }
   
   /**
@@ -499,12 +499,12 @@ public class PaletteTest {
   
   /**
    * The {@link Palette#contrastColor(java.awt.Color)} method should reject null 
-   * as a parameter and throw the appropriate exception.
+   * as an argument and throw the appropriate exception.
    */
-  public void testContrastColorWithNull() {
+  public void testContrastColorNullArgument() {
     assertThrows(NullPointerException.class,
                  () -> Palette.contrastColor(null),
-                 "No NullPointerException thrown for null parameter.");
+                 "No NullPointerException thrown for null argument.");
   }
   
   /**

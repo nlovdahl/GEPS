@@ -32,7 +32,6 @@ public final class Tileset {
    * tileset format. The tileset will have no pattern and only contain pixels
    * with an index of zero.
    * 
-   * 
    * @param tiles the number of tiles for the created tileset. This should be
    *        between one and {@link #MAX_TILES}.
    * @param bpp the number of bits per pixel used to select a color from a
@@ -54,7 +53,7 @@ public final class Tileset {
       throw new IllegalArgumentException("Invalid BPP value.");
     } else if (!isValidTilesetFormat(tileset_format)) {
       throw new IllegalArgumentException("Invalid tileset format value.");
-    }  // else, all parameters should be valid
+    }  // else, all arguments should be valid
     
     tiles_ = tiles;
     bpp_ = bpp;
@@ -171,15 +170,18 @@ public final class Tileset {
     if (tile < 0 || tile >= tiles_) {
       throw new IllegalArgumentException(
         "Cannot set index for tile " + Integer.toString(tile) + " out of " +
-        Integer.toString(tiles_) + ".");
+        Integer.toString(tiles_) + "."
+      );
     } else if (x < 0 || x >= TILE_WIDTH || y < 0 || y >= TILE_HEIGHT) {
       throw new IllegalArgumentException(
         "Cannot set index for coordinates (" + Integer.toString(x) + ", " +
-        Integer.toString(y) + ").");
+        Integer.toString(y) + ")."
+      );
     } else if (index >= 1 << bpp_) {  // max index is 2^bpp_
       throw new IllegalArgumentException(
-        "Cannot set index to be " + Integer.toString(index) +
-        ". Max index is " + Integer.toString(1 << bpp_) + ".");
+        Integer.toString(index) + " is an invalid index for " +
+        Integer.toString(bpp_) + " BPP."
+      );
     }  // else, the tile, coordinates, and new index are valid
     
     pixel_indexes_[tile][x][y] = index;
@@ -250,7 +252,7 @@ public final class Tileset {
   public static final int MAX_BPP = 8;
   /** The largest number of tiles that can be in a tileset. This should be the
    greatest number of tiles that can be used alongside {@link #MAX_BPP} without
-   using more bits than the maximum value for an integer. */
+   using more bits than the maximum value for a signed integer can hold. */
   public static final int MAX_TILES = Integer.MAX_VALUE / bitsPerTile(MAX_BPP);
   /** The number denoting a serial tileset format. */
   public static final int SERIAL_FORMAT = 0;

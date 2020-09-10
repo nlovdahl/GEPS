@@ -42,8 +42,7 @@ public final class TilesetController {
    * Creates a tileset controller using the given number of bits per pixel and
    * an initial tileset with the specified width and height. If
    * {@link #resetTileset()} is called, then the current tileset will have the
-   * same parameters as given to this constructor.
-   * 
+   * same properties as given to this constructor.
    * 
    * @param width the width of the initial tileset in tiles.
    * @param height the height of the initial tileset in tiles.
@@ -65,7 +64,7 @@ public final class TilesetController {
       throw new IllegalArgumentException("Invalid BPP value.");
     } else if (!Tileset.isValidTilesetFormat(tileset_format)) {
       throw new IllegalArgumentException("Invalid tileset format value.");
-    }  // else, all parameters should be valid
+    }  // else, all arguments should be valid
     
     tileset_width_ = width;
     initial_tileset_width_ = width;

@@ -52,7 +52,7 @@ public final class TilesetInterpreter {
       throw new IllegalArgumentException("Invalid BPP value.");
     } else if (!Tileset.isValidTilesetFormat(tileset_format)) {
       throw new IllegalArgumentException("Invalid tileset format.");
-    }  // else, we should have valid parameters
+    }  // else, we should have valid arguments
     
     // return a deep copy of the tileset if it already matches the given specs
     if (tileset.getBPP() == bpp &&
@@ -127,7 +127,7 @@ public final class TilesetInterpreter {
       throw new IllegalArgumentException("Invalid BPP value.");
     } else if (!Tileset.isValidTilesetFormat(tileset_format)) {
       throw new IllegalArgumentException("Invalid tileset format value.");
-    }  // else, we should have valid parameters
+    }  // else, we should have valid arguments
     
     TilesetEncoderDecoder decoder;
     // select the appropriate decoder based on the tileset format

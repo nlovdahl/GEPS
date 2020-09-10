@@ -65,7 +65,7 @@ public final class PaletteView extends JTable {
     if (palette_controller == null) {
       throw new NullPointerException(
         "Cannot create PaletteView with null PaletteController.");
-    }  // else, our parameters are valid and we can proceed
+    }  // else, our arguments are valid and we can proceed
     
     palette_controller_ = palette_controller;
     color_chooser_ = new SNESColorChooser(parent_frame);
