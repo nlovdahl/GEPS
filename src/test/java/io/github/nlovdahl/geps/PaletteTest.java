@@ -298,7 +298,7 @@ public class PaletteTest {
   }
   
   /**
-   * When using the copy constructor is used, the resulting palette should have
+   * When the copy constructor is used, the resulting palette should have
    * all the same colors in the respective indexes.
    */
   @Test
