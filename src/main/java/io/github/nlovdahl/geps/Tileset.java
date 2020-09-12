@@ -177,7 +177,7 @@ public final class Tileset {
         "Cannot set index for coordinates (" + Integer.toString(x) + ", " +
         Integer.toString(y) + ")."
       );
-    } else if (index >= 1 << bpp_) {  // max index is 2^bpp_
+    } else if (index < 0 || index >= 1 << bpp_) {  // max index is 2^bpp_
       throw new IllegalArgumentException(
         Integer.toString(index) + " is an invalid index for " +
         Integer.toString(bpp_) + " BPP."
