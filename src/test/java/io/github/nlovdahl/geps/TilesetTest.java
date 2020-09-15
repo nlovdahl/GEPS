@@ -615,7 +615,7 @@ public class TilesetTest {
    * be copied should throw the appropriate exception.
    */
   @Test
-  public void testTilesetSizedCopyConstructorNullArgument() {
+  public void testTilesetSizedCopyConstructorNullTilesetArgument() {
     assertThrows(NullPointerException.class,
                  () -> new Tileset(null, TEST_TILESET_SIZE),
                  "No NullPointerException thrown for null argument.");
@@ -771,7 +771,7 @@ public class TilesetTest {
    * copied should throw the appropriate exception.
    */
   @Test
-  public void testTilesetCopyConstructorNullArgument() {
+  public void testTilesetCopyConstructorNullTilesetArgument() {
     assertThrows(NullPointerException.class, () -> new Tileset(null),
                  "No NullPointerException thrown for null argument.");
   }
