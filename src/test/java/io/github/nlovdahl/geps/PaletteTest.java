@@ -42,7 +42,7 @@ public class PaletteTest {
    */
   @Test
   public void testClampColorWithRGB() {
-    for (Color test_color : TEST_COLORS) {
+    for (Color test_color : SELECT_COLORS) {
       Color expected_color =
         new Color((test_color.getRGB() | 0xFF000000) & 0xFFF8F8F8, true);
       Color actual_color = Palette.clampColor(test_color.getRed(),
@@ -69,7 +69,7 @@ public class PaletteTest {
    */
   @Test
   public void testClampColorWithColor() {
-    for (Color test_color : TEST_COLORS) {
+    for (Color test_color : SELECT_COLORS) {
       Color expected_color =
         new Color((test_color.getRGB() | 0xFF000000) & 0xFFF8F8F8, true);
       Color actual_color = Palette.clampColor(test_color);
@@ -92,9 +92,9 @@ public class PaletteTest {
    * argument and throw the appropriate exception.
    */
   @Test
-  public void testClampColorNullArgument() {
+  public void testClampColorNullColorArgument() {
     assertThrows(NullPointerException.class, () -> Palette.clampColor(null),
-                 "No NullPointerException thrown for null argument.");
+                 "No NullPointerException thrown for null color argument.");
   }
   
   /**
@@ -105,31 +105,22 @@ public class PaletteTest {
   public void testGetColorIndexes() {
     Palette palette = new Palette();
     
-    assertThrows(
-      ArrayIndexOutOfBoundsException.class,
-      () -> palette.getColor(-1),
-      "No ArrayIndexOutOfBoundsException thrown for invalid index -1."
-    );
-    assertDoesNotThrow(
-      () -> palette.getColor(0),
-      "Exception thrown for valid index 0."
-    );
-    assertDoesNotThrow(
-      () -> palette.getColor(Palette.PALETTE_MAX_SIZE / 2),
-      "Exception thrown for valid index " +
-      Integer.toString(Palette.PALETTE_MAX_SIZE / 2) + "."
-    );
-    assertDoesNotThrow(
-      () -> palette.getColor(Palette.PALETTE_MAX_SIZE - 1),
-      "Exception thrown for valid index " +
-      Integer.toString(Palette.PALETTE_MAX_SIZE - 1) + "."
-    );
-    assertThrows(
-      ArrayIndexOutOfBoundsException.class,
-      () -> palette.getColor(Palette.PALETTE_MAX_SIZE),
-      "No ArrayIndexOutOfBoundsException thrown for invalid index " +
-      Integer.toString(Palette.PALETTE_MAX_SIZE) + "."
-    );
+    for (int index : SELECT_PALETTE_INDEXES) {
+      // if the index should be valid...
+      if (index >= 0 && index < Palette.PALETTE_MAX_SIZE) {
+        assertDoesNotThrow(
+          () -> palette.getColor(index),
+          "An exception was thrown for index " + Integer.toString(index) + "."
+        );
+      } else {  // else, the index is invalid and we expect an exception
+        assertThrows(
+          ArrayIndexOutOfBoundsException.class,
+          () -> palette.getColor(index),
+          "No ArrayIndexOutOfBoundsException was thrown for index " +
+          Integer.toString(index) + "."
+        );
+      }
+    }
   }
   
   /**
@@ -142,31 +133,22 @@ public class PaletteTest {
   public void testSetColorIndexesWithRGB() {
     Palette palette = new Palette();
     
-    assertThrows(
-      ArrayIndexOutOfBoundsException.class,
-      () -> palette.setColor(-1, 0, 0, 0),
-      "No ArrayIndexOutOfBoundsException thrown for invalid index -1."
-    );
-    assertDoesNotThrow(
-      () -> palette.setColor(0, 0, 0, 0),
-      "Exception thrown for valid index 0."
-    );
-    assertDoesNotThrow(
-      () -> palette.setColor(Palette.PALETTE_MAX_SIZE / 2, 0, 0, 0),
-      "Exception thrown for valid index " +
-      Integer.toString(Palette.PALETTE_MAX_SIZE / 2) + "."
-    );
-    assertDoesNotThrow(
-      () -> palette.setColor(Palette.PALETTE_MAX_SIZE - 1, 0, 0, 0),
-      "Exception thrown for valid index " +
-      Integer.toString(Palette.PALETTE_MAX_SIZE - 1) + "."
-    );
-    assertThrows(
-      ArrayIndexOutOfBoundsException.class,
-      () -> palette.setColor(Palette.PALETTE_MAX_SIZE, 0, 0, 0),
-      "No ArrayIndexOutOfBoundsException thrown for invalid index " +
-      Integer.toString(Palette.PALETTE_MAX_SIZE) + "."
-    );
+    for (int index : SELECT_PALETTE_INDEXES) {
+      // if the index should be valid...
+      if (index >= 0 && index < Palette.PALETTE_MAX_SIZE) {
+        assertDoesNotThrow(
+          () -> palette.setColor(index, 0, 0, 0),
+          "An exception was thrown for index " + Integer.toString(index) + "."
+        );
+      } else {  // else, the index is invalid and we expect an exception
+        assertThrows(
+          ArrayIndexOutOfBoundsException.class,
+          () -> palette.setColor(index, 0, 0, 0),
+          "No ArrayIndexOutOfBoundsException was thrown for index " +
+          Integer.toString(index) + "."
+        );
+      }
+    }
   }
   
   /**
@@ -179,31 +161,22 @@ public class PaletteTest {
   public void testSetColorIndexesWithColor() {
     Palette palette = new Palette();
     
-    assertThrows(
-      ArrayIndexOutOfBoundsException.class,
-      () -> palette.setColor(-1, Color.BLACK),
-      "No ArrayIndexOutOfBoundsException thrown for invalid index -1."
-    );
-    assertDoesNotThrow(
-      () -> palette.setColor(0, Color.BLACK),
-      "Exception thrown for valid index 0."
-    );
-    assertDoesNotThrow(
-      () -> palette.setColor(Palette.PALETTE_MAX_SIZE / 2, Color.BLACK),
-        "Exception thrown for valid index " +
-        Integer.toString(Palette.PALETTE_MAX_SIZE / 2) + "."
-    );
-    assertDoesNotThrow(
-      () -> palette.setColor(Palette.PALETTE_MAX_SIZE - 1, Color.BLACK),
-      "Exception thrown for valid index " +
-      Integer.toString(Palette.PALETTE_MAX_SIZE - 1) + "."
-    );
-    assertThrows(
-      ArrayIndexOutOfBoundsException.class,
-      () -> palette.setColor(Palette.PALETTE_MAX_SIZE, Color.BLACK),
-      "No ArrayIndexOutOfBoundsException thrown for invalid index " +
-      Integer.toString(Palette.PALETTE_MAX_SIZE) + "."
-    );
+    for (int index : SELECT_PALETTE_INDEXES) {
+      // if the index should be valid...
+      if (index >= 0 && index < Palette.PALETTE_MAX_SIZE) {
+        assertDoesNotThrow(
+          () -> palette.setColor(index, Color.BLACK),
+          "An exception was thrown for index " + Integer.toString(index) + "."
+        );
+      } else {  // else, the index is invalid and we expect an exception
+        assertThrows(
+          ArrayIndexOutOfBoundsException.class,
+          () -> palette.setColor(index, Color.BLACK),
+          "No ArrayIndexOutOfBoundsException was thrown for index " +
+          Integer.toString(index) + "."
+        );
+      }
+    }
   }
   
   /**
@@ -211,11 +184,11 @@ public class PaletteTest {
    * arguments and throw the appropriate exception.
    */
   @Test
-  public void testSetColorNullArgument() {
+  public void testSetColorNullColorArgument() {
     Palette palette = new Palette();
     
     assertThrows(NullPointerException.class, () -> palette.setColor(0, null),
-                 "No NullPointerException thrown for null argument.");
+                 "No NullPointerException thrown for null color argument.");
   }
   
   /**
@@ -229,10 +202,10 @@ public class PaletteTest {
     Palette palette = new Palette();
     
     // go through the both the entire palette and all of the test colors
-    int limit = Math.max(TEST_COLORS.size(), Palette.PALETTE_MAX_SIZE);
+    int limit = Math.max(SELECT_COLORS.size(), Palette.PALETTE_MAX_SIZE);
     for (int index = 0; index < limit; index++) {
       int test_index = index % Palette.PALETTE_MAX_SIZE;
-      Color test_color = TEST_COLORS.get(index % TEST_COLORS.size());
+      Color test_color = SELECT_COLORS.get(index % SELECT_COLORS.size());
       Color expected_color = Palette.clampColor(test_color);
       
       palette.setColor(test_index, test_color.getRed(), test_color.getGreen(),
@@ -255,10 +228,10 @@ public class PaletteTest {
     Palette palette = new Palette();
     
     // go through the both the entire palette and all of the test colors
-    int limit = Math.max(TEST_COLORS.size(), Palette.PALETTE_MAX_SIZE);
+    int limit = Math.max(SELECT_COLORS.size(), Palette.PALETTE_MAX_SIZE);
     for (int index = 0; index < limit; index++) {
       int test_index = index % Palette.PALETTE_MAX_SIZE;
-      Color test_color = TEST_COLORS.get(index % TEST_COLORS.size());
+      Color test_color = SELECT_COLORS.get(index % SELECT_COLORS.size());
       Color expected_color = Palette.clampColor(test_color);
       
       palette.setColor(test_index , test_color);
@@ -292,9 +265,9 @@ public class PaletteTest {
    * copied should throw the appropriate exception.
    */
   @Test
-  public void testPaletteCopyConstructorNullArgument() {
+  public void testPaletteCopyConstructorNullPaletteArgument() {
     assertThrows(NullPointerException.class, () -> new Palette(null),
-                 "No NullPointerException thrown for null argument.");
+                 "No NullPointerException thrown for null palette argument.");
   }
   
   /**
@@ -307,7 +280,7 @@ public class PaletteTest {
     Palette starting_palette = new Palette();
     for (int index = 0; index < Palette.PALETTE_MAX_SIZE; index++) {
       starting_palette.setColor(
-        index, TEST_COLORS.get(index % TEST_COLORS.size())
+        index, SELECT_COLORS.get(index % SELECT_COLORS.size())
       );
     }
     
@@ -333,7 +306,7 @@ public class PaletteTest {
     Palette starting_palette = new Palette();
     for (int index = 0; index < Palette.PALETTE_MAX_SIZE; index++) {
       starting_palette.setColor(
-        index, TEST_COLORS.get(index % TEST_COLORS.size())
+        index, SELECT_COLORS.get(index % SELECT_COLORS.size())
       );
     }
     Palette copied_palette = new Palette(starting_palette);
@@ -341,13 +314,13 @@ public class PaletteTest {
     // change the copied palette (just shift the colors)
     for (int index = 0; index < Palette.PALETTE_MAX_SIZE; index++) {
       copied_palette.setColor(
-        index, TEST_COLORS.get((index + 1) % TEST_COLORS.size())
+        index, SELECT_COLORS.get((index + 1) % SELECT_COLORS.size())
       );
     }
     // check that the starting palette has remained the same
     for (int index = 0; index < Palette.PALETTE_MAX_SIZE; index++) {
       Color expected_color = Palette.clampColor(
-        TEST_COLORS.get(index % TEST_COLORS.size())
+        SELECT_COLORS.get(index % SELECT_COLORS.size())
       );
       Color actual_color = starting_palette.getColor(index);
       assertEquals(expected_color, actual_color,
@@ -358,12 +331,12 @@ public class PaletteTest {
     // change the starting palette
     for (int index = 0; index < Palette.PALETTE_MAX_SIZE; index++) {
       starting_palette.setColor(
-        index, TEST_COLORS.get((index + 2) % TEST_COLORS.size()));
+        index, SELECT_COLORS.get((index + 2) % SELECT_COLORS.size()));
     }
     // check that the copied palette has remained the same
     for (int index = 0; index < Palette.PALETTE_MAX_SIZE; index++) {
       Color expected_color = Palette.clampColor(
-        TEST_COLORS.get((index + 1) % TEST_COLORS.size()));
+        SELECT_COLORS.get((index + 1) % SELECT_COLORS.size()));
       Color actual_color = copied_palette.getColor(index);
       assertEquals(expected_color, actual_color,
                    "Starting palette altered by change in copied palette at " +
@@ -376,10 +349,10 @@ public class PaletteTest {
    * null as an argument and throw the appropriate exception.
    */
   @Test
-  public void testGetSNESColorCodeNullArgument() {
+  public void testGetSNESColorCodeNullColorArgument() {
     assertThrows(NullPointerException.class,
                  () -> Palette.getSNESColorCode(null),
-                 "No NullPointerException thrown for null argument.");
+                 "No NullPointerException thrown for null color argument.");
   }
   
   /**
@@ -447,10 +420,10 @@ public class PaletteTest {
    * reject null as an argument and throw the appropriate exception.
    */
   @Test
-  public void testGetSNESColorCodeStringNullArgument() {
+  public void testGetSNESColorCodeStringNullColorArgument() {
     assertThrows(NullPointerException.class,
                  () -> Palette.getSNESColorCodeString(null),
-                 "No NullPointerException thrown for null argument.");
+                 "No NullPointerException thrown for null color argument.");
   }
   
   /**
@@ -501,10 +474,10 @@ public class PaletteTest {
    * The {@link Palette#contrastColor(java.awt.Color)} method should reject null 
    * as an argument and throw the appropriate exception.
    */
-  public void testContrastColorNullArgument() {
+  public void testContrastColorNullColorArgument() {
     assertThrows(NullPointerException.class,
                  () -> Palette.contrastColor(null),
-                 "No NullPointerException thrown for null argument.");
+                 "No NullPointerException thrown for null color argument.");
   }
   
   /**
@@ -524,11 +497,14 @@ public class PaletteTest {
                Integer.toString(min_palette_max_size) + " entries.");
   }
   
-  /**
-   * Colors used for testing. The selection of these colors impacts the quality
-   * of the coverage of the unit tests.
-   */
-  private static final List<Color> TEST_COLORS = List.of(
+  /** A list of both valid and invalid palette indexes. */
+  private static final List<Integer> SELECT_PALETTE_INDEXES = List.of(
+    -1, 0, 1, Palette.PALETTE_MAX_SIZE / 2, Palette.PALETTE_MAX_SIZE - 1,
+    Palette.PALETTE_MAX_SIZE
+  );
+  /** Colors used for testing. The selection of these colors impacts the quality
+   of the coverage of the unit tests. */
+  private static final List<Color> SELECT_COLORS = List.of(
     // simple colors
     Color.BLACK, Color.DARK_GRAY, Color.GRAY, Color.LIGHT_GRAY, Color.WHITE,
     Color.RED, Color.ORANGE, Color.YELLOW, Color.GREEN, Color.BLUE, Color.CYAN,

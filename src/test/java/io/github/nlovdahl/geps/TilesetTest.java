@@ -23,10 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.Random;
 
 /**
@@ -66,7 +63,7 @@ public class TilesetTest {
   @Test
   public void testBitsPerTile() {
     int pixels_per_tile = Tileset.TILE_WIDTH * Tileset.TILE_HEIGHT;
-    
+    // test the full range of valid BPPs
     for (int bpp = Tileset.MIN_BPP; bpp <= Tileset.MAX_BPP; bpp++) {
       assertEquals(bpp * pixels_per_tile, Tileset.bitsPerTile(bpp),
                    "Mismatch at " + Integer.toString(bpp) + " BPP.");
@@ -80,7 +77,7 @@ public class TilesetTest {
    */
   @Test
   public void testIsValidBPP() {
-    for (int bpp : TEST_BPPS) {
+    for (int bpp : TestValues.TEST_BPPS) {
       if (bpp >= Tileset.MIN_BPP && bpp <= Tileset.MAX_BPP) {
         assertTrue(Tileset.isValidBPP(bpp),
                    Integer.toString(bpp) + " should be a valid BPP.");
@@ -97,9 +94,9 @@ public class TilesetTest {
    */
   @Test
   public void testIsValidTilesetFormat() {
-    for (int format : TEST_TILESET_FORMAT_VALUES) {
+    for (int format : TestValues.TEST_TILESET_FORMAT_VALUES) {
       // if the value denotes a tileset format, then it should be valid
-      if (TILESET_FORMAT_VALUES.contains(format)) {
+      if (TestValues.TILESET_FORMAT_VALUES.contains(format)) {
         assertTrue(Tileset.isValidTilesetFormat(format),
                    Integer.toString(format) + " should be valid.");
       } else {  // else, the value should not be a valid tileset format
@@ -116,19 +113,13 @@ public class TilesetTest {
    */
   @Test
   public void testGetNumberOfTiles() {
-    // test with a midpoint bpp value
-    int bpp = (Tileset.MIN_BPP + Tileset.MAX_BPP) / 2;
-    
-    for (int tileset_size : TEST_TILESET_SIZES) {
-      // only test tileset sizes that should be valid
-      if (tileset_size > 0 && tileset_size <= Tileset.MAX_TILES) {
-        Tileset tileset = new Tileset(tileset_size, bpp,
-                                      Tileset.PAIRED_INTERTWINED_FORMAT);
-        
-        assertEquals(tileset_size, tileset.getNumberOfTiles(),
-                     "The returned number of tiles does not match what was " +
-                     "given to the constructor.");
-      }
+    for (int tileset_size : SELECT_VALID_TILESET_SIZES) {
+      Tileset tileset = new Tileset(tileset_size, TestValues.TEST_BPP,
+                                    TestValues.TEST_TILESET_FORMAT_VALUE);
+      
+      assertEquals(tileset_size, tileset.getNumberOfTiles(),
+                   "The returned number of tiles does not match what was " +
+                   "given to the constructor.");
     }
   }
   
@@ -139,16 +130,15 @@ public class TilesetTest {
    */
   @Test
   public void testGetBPP() {
-    for (int bpp : TEST_BPPS) {
-      // only test valid BPPs
-      if (bpp >= Tileset.MIN_BPP && bpp <= Tileset.MAX_BPP) {
-        Tileset tileset = new Tileset(TEST_TILESET_SIZE, bpp,
-                                      Tileset.PAIRED_INTERTWINED_FORMAT);
-        
-        assertEquals(bpp, tileset.getBPP(),
-                     "The returned BPP does not match what was given to the " +
-                     "constructor.");
-      }
+    // test the full range of valid BPPs
+    for (int bpp = Tileset.MIN_BPP; bpp <= Tileset.MAX_BPP; bpp++) {
+      Tileset tileset = new Tileset(TestValues.TEST_TILESET_SIZE, bpp,
+                                    TestValues.TEST_TILESET_FORMAT_VALUE);
+      
+      assertEquals(
+        bpp, tileset.getBPP(),
+        "The returned BPP does not match what was given to the constructor."
+      );
     }
   }
   
@@ -160,11 +150,9 @@ public class TilesetTest {
    */
   @Test
   public void testGetTilesetFormat() {
-    // test with a midpoint bpp value
-    int bpp = (Tileset.MIN_BPP + Tileset.MAX_BPP) / 2;
-    
-    for (int format : TILESET_FORMAT_VALUES) {
-      Tileset tileset = new Tileset(TEST_TILESET_SIZE, bpp, format);
+    for (int format : TestValues.TILESET_FORMAT_VALUES) {
+      Tileset tileset = new Tileset(TestValues.TEST_TILESET_SIZE,
+                                    TestValues.TEST_BPP, format);
       
       assertEquals(format, tileset.getTilesetFormat(),
                    "The returned tileset format value does not match what " +
@@ -180,21 +168,23 @@ public class TilesetTest {
    */
   @Test
   public void testGetPixelIndexCoordinates() {
-    // test with a midpoint bpp value and create a tileset to test with
-    int bpp = (Tileset.MIN_BPP + Tileset.MAX_BPP) / 2;
-    Tileset tileset = new Tileset(TEST_TILESET_SIZE, bpp,
-                                  Tileset.PAIRED_INTERTWINED_FORMAT);
+    // create a tileset to test with
+    Tileset tileset = new Tileset(
+      TestValues.TEST_TILESET_SIZE, TestValues.TEST_BPP,
+      TestValues.TEST_TILESET_FORMAT_VALUE
+    );
     
-    for (int tile : TEST_TILE_NUMS) {
-      for (int y : TEST_Y_COORDS) {
-        for (int x : TEST_X_COORDS) {
+    for (int tile : TestValues.TEST_TILE_NUMS) {
+      for (int y : TestValues.TEST_Y_COORDS) {
+        for (int x : TestValues.TEST_X_COORDS) {
           int index = tileset.getPixelIndex(tile, x, y);
           // if the coordinates should be valid...
-          if (isValidCoordinates(TEST_TILESET_SIZE, tile, x, y)) {
+          if (isValidCoordinates(TestValues.TEST_TILESET_SIZE, tile, x, y)) {
             // check that we got an index in the range possible for bpp's value
             assertTrue(
-              index >= 0 && index < (1 << bpp),
-              "An impossible index for " + Integer.toString(bpp) + " BPP, " +
+              index >= 0 && index < (1 << TestValues.TEST_BPP),
+              "An impossible index for " +
+              Integer.toString(tileset.getBPP()) + " BPP, " +
               Integer.toString(index) + ", was returned for coordinates " +
               "(tile = " + Integer.toString(tile) + ", x = " +
               Integer.toString(x) + ", y = " + Integer.toString(y) + ")."
@@ -220,16 +210,17 @@ public class TilesetTest {
    */
   @Test
   public void testSetPixelIndexCoordinates() {
-    // test with a midpoint bpp value and create a tileset to test with
-    int bpp = (Tileset.MIN_BPP + Tileset.MAX_BPP) / 2;
-    Tileset tileset = new Tileset(TEST_TILESET_SIZE, bpp,
-                                  Tileset.PAIRED_INTERTWINED_FORMAT);
+    // create a tileset to test with
+    Tileset tileset = new Tileset(
+      TestValues.TEST_TILESET_SIZE, TestValues.TEST_BPP,
+      TestValues.TEST_TILESET_FORMAT_VALUE
+    );
     
-    for (int tile : TEST_TILE_NUMS) {
-      for (int y : TEST_Y_COORDS) {
-        for (int x : TEST_X_COORDS) {
+    for (int tile : TestValues.TEST_TILE_NUMS) {
+      for (int y : TestValues.TEST_Y_COORDS) {
+        for (int x : TestValues.TEST_X_COORDS) {
           // if the coordinates should be valid...
-          if (isValidCoordinates(TEST_TILESET_SIZE, tile, x, y)) {
+          if (isValidCoordinates(TestValues.TEST_TILESET_SIZE, tile, x, y)) {
             // check that we got an index in the range possible for bpp's value
             assertDoesNotThrow(
               () -> tileset.setPixelIndex(tile, x, y, 0),
@@ -258,26 +249,21 @@ public class TilesetTest {
    */
   @Test
   public void testSetPixelIndexIndexes() {
-    // create a list of bpps to test (bpp changes the range of valid indexes)
-    List<Integer> bpps = List.of(
-      Tileset.MIN_BPP, (Tileset.MIN_BPP + Tileset.MAX_BPP) / 2, Tileset.MAX_BPP
-    );
-    
-    for (int bpp : bpps) {
+    for (int bpp : SELECT_VALID_BPPS) {
       // create a tileset with the specified bpp to test with
-      Tileset tileset = new Tileset(TEST_TILESET_SIZE, bpp,
-                                    Tileset.PAIRED_INTERTWINED_FORMAT);
+      Tileset tileset = new Tileset(TestValues.TEST_TILESET_SIZE, bpp,
+                                    TestValues.TEST_TILESET_FORMAT_VALUE);
       // create a list of indexes to test with for the bpp
       int max_index = (1 << bpp) - 1;
       List<Integer> indexes = List.of(
         -1, 0, 1, max_index / 2, max_index - 1, max_index, max_index + 1
       );
       
-      for (int tile : TEST_TILE_NUMS) {
-        for (int y : TEST_Y_COORDS) {
-          for (int x : TEST_X_COORDS) {
+      for (int tile : TestValues.TEST_TILE_NUMS) {
+        for (int y : TestValues.TEST_Y_COORDS) {
+          for (int x : TestValues.TEST_X_COORDS) {
             // only test valid coordinates
-            if (isValidCoordinates(TEST_TILESET_SIZE, tile, x, y)) {
+            if (isValidCoordinates(TestValues.TEST_TILESET_SIZE, tile, x, y)) {
               for (int index : indexes) {
                 // if the index should be valid...
                 if (index >= 0 && index <= max_index) {
@@ -314,15 +300,10 @@ public class TilesetTest {
    */
   @Test
   public void testGetAndSetPixelIndexes() {
-    // create a list of bpps to test (bpp changes the range of valid indexes)
-    List<Integer> bpps = List.of(
-      Tileset.MIN_BPP, (Tileset.MIN_BPP + Tileset.MAX_BPP) / 2, Tileset.MAX_BPP
-    );
-    
-    for (int bpp : bpps) {
+    for (int bpp : SELECT_VALID_BPPS) {
       // create a tileset with the specified bpp to test with
-      Tileset tileset = new Tileset(TEST_TILESET_SIZE, bpp,
-                                    Tileset.PAIRED_INTERTWINED_FORMAT);
+      Tileset tileset = new Tileset(TestValues.TEST_TILESET_SIZE, bpp,
+                                    TestValues.TEST_TILESET_FORMAT_VALUE);
       // create a list of indexes to test with for the bpp
       int max_index = (1 << bpp) - 1;
       List<Integer> indexes = List.of(
@@ -330,11 +311,11 @@ public class TilesetTest {
         1, max_index / 2, max_index, 0, max_index - 1
       );
       
-      for (int tile : TEST_TILE_NUMS) {
-        for (int y : TEST_Y_COORDS) {
-          for (int x : TEST_X_COORDS) {
+      for (int tile : TestValues.TEST_TILE_NUMS) {
+        for (int y : TestValues.TEST_Y_COORDS) {
+          for (int x : TestValues.TEST_X_COORDS) {
             // only test valid coordinates
-            if (isValidCoordinates(TEST_TILESET_SIZE, tile, x, y)) {
+            if (isValidCoordinates(TestValues.TEST_TILESET_SIZE, tile, x, y)) {
               for (int index : indexes) {
                 tileset.setPixelIndex(tile, x, y, index);
                 assertEquals(
@@ -360,13 +341,13 @@ public class TilesetTest {
    */
   @Test
   public void testTilesetConstructorArguments() {
-    for (int tileset_size : TEST_TILESET_SIZES) {
-      for (int bpp : TEST_BPPS) {
-        for (int format : TEST_TILESET_FORMAT_VALUES) {
+    for (int tileset_size : TestValues.TEST_TILESET_SIZES) {
+      for (int bpp : TestValues.TEST_BPPS) {
+        for (int format : TestValues.TEST_TILESET_FORMAT_VALUES) {
           // if the arguments are all valid...
           if (tileset_size > 0 && tileset_size <= Tileset.MAX_TILES &&
               bpp >= Tileset.MIN_BPP && bpp <= Tileset.MAX_BPP &&
-              TILESET_FORMAT_VALUES.contains(format)) {
+              TestValues.TILESET_FORMAT_VALUES.contains(format)) {
             assertDoesNotThrow(
               () -> new Tileset(tileset_size, bpp, format),
               "An exception was thrown making a tileset with " +
@@ -395,16 +376,14 @@ public class TilesetTest {
    */
   @Test
   public void testTilesetConstructorInitialPixelIndexes() {
-    // create a list of bpps to test (bpp changes the range of valid indexes)
-    List<Integer> bpps = List.of(
-      Tileset.MIN_BPP, (Tileset.MIN_BPP + Tileset.MAX_BPP) / 2, Tileset.MAX_BPP
-    );
-    
-    for (int tileset_format : TILESET_FORMAT_VALUES) {
-      for (int bpp : bpps) {
-        Tileset tileset = new Tileset(TEST_TILESET_SIZE, bpp, tileset_format);
+    // test the full range of combinates of BPPs and tileset format values
+    for (int tileset_format : TestValues.TILESET_FORMAT_VALUES) {
+      for (int bpp : SELECT_VALID_BPPS) {
+        // create a new tileset with the BPP and format to check
+        Tileset tileset = new Tileset(TestValues.TEST_TILESET_SIZE, bpp,
+                                      tileset_format);
         // check each pixel in the tileset
-        for (int tile = 0; tile < TEST_TILESET_SIZE; tile++) {
+        for (int tile = 0; tile < TestValues.TEST_TILESET_SIZE; tile++) {
           for (int y = 0; y < Tileset.TILE_HEIGHT; y++) {
             for (int x = 0; x < Tileset.TILE_WIDTH; x++) {
               assertEquals(
@@ -429,10 +408,12 @@ public class TilesetTest {
   @Test
   public void testTilesetSizedCopyConstructorSizes() {
     // create a tileset to test the sized copy constructor with
-    Tileset tileset = new Tileset(TEST_TILESET_SIZE, Tileset.MIN_BPP,
-                                  Tileset.PAIRED_INTERTWINED_FORMAT);
+    Tileset tileset = new Tileset(
+      TestValues.TEST_TILESET_SIZE, TestValues.TEST_BPP,
+      TestValues.TEST_TILESET_FORMAT_VALUE
+    );
     
-    for (int tileset_size : TEST_TILESET_SIZES) {
+    for (int tileset_size : TestValues.TEST_TILESET_SIZES) {
       // if the tileset size should be a valid argument...
       if (tileset_size > 0 && tileset_size <= Tileset.MAX_TILES) {
         assertEquals(
@@ -459,19 +440,17 @@ public class TilesetTest {
    */
   @Test
   public void testTilesetSizedCopyConstructorIdentical() {
-    // a list of tileset sizes to test the sized constructor with
-    List<Integer> tileset_sizes = List.of(
-      1, TEST_TILESET_SIZE / 2, TEST_TILESET_SIZE, TEST_TILESET_SIZE * 2
-    );
     Random random = new Random();  // used to generate random indexes
     
-    for (int format : TILESET_FORMAT_VALUES) {
+    // test the full range of combinates of BPPs and tileset format values
+    for (int format : TestValues.TILESET_FORMAT_VALUES) {
       for (int bpp = Tileset.MIN_BPP; bpp <= Tileset.MAX_BPP; bpp++) {
         int index_bound = 1 << bpp;
         
         // create a tileset to copy and set its indexes to hold random values
-        Tileset tileset = new Tileset(TEST_TILESET_SIZE, bpp, format);
-        for (int tile = 0; tile < TEST_TILESET_SIZE; tile++) {
+        Tileset tileset = new Tileset(TestValues.TEST_TILESET_SIZE, bpp,
+                                      format);
+        for (int tile = 0; tile < TestValues.TEST_TILESET_SIZE; tile++) {
           for (int y = 0; y < Tileset.TILE_HEIGHT; y++) {
             for (int x = 0; x < Tileset.TILE_WIDTH; x++) {
               tileset.setPixelIndex(tile, x, y, random.nextInt(index_bound));
@@ -480,7 +459,7 @@ public class TilesetTest {
         }
         
         // test various sizes for the copy constructors
-        for (int tileset_size : tileset_sizes) {
+        for (int tileset_size : SELECT_VALID_TILESET_SIZES) {
           Tileset copied_tileset = new Tileset(tileset, tileset_size);
           
           // check that the tilesets have the same bpp and tileset format
@@ -533,15 +512,18 @@ public class TilesetTest {
   public void testTilesetSizedCopyConstructorDeepCopy() {
     Random random = new Random();  // used to generate random indexes
     
-    for (int format : TILESET_FORMAT_VALUES) {
+    // test the full range of combinates of BPPs and tileset format values
+    for (int format : TestValues.TILESET_FORMAT_VALUES) {
       for (int bpp = Tileset.MIN_BPP; bpp <= Tileset.MAX_BPP; bpp++) {
         int index_bound = 1 << bpp;
         int[][][] original_indexes =  // [tile][row][column]
-          new int[TEST_TILESET_SIZE][Tileset.TILE_HEIGHT][Tileset.TILE_WIDTH];
+          new int[TestValues.TEST_TILESET_SIZE]
+                 [Tileset.TILE_HEIGHT][Tileset.TILE_WIDTH];
         
         // fill a tileset with random indexes - keep a copy of these indexes
-        Tileset tileset = new Tileset(TEST_TILESET_SIZE, bpp, format);
-        for (int tile = 0; tile < TEST_TILESET_SIZE; tile++) {
+        Tileset tileset = new Tileset(TestValues.TEST_TILESET_SIZE, bpp,
+                                      format);
+        for (int tile = 0; tile < TestValues.TEST_TILESET_SIZE; tile++) {
           for (int y = 0; y < Tileset.TILE_HEIGHT; y++) {
             for (int x = 0; x < Tileset.TILE_WIDTH; x++) {
               int index = random.nextInt(index_bound);
@@ -551,10 +533,11 @@ public class TilesetTest {
           }
         }
         // use the sized copy constructor to create an identical copy
-        Tileset copied_tileset = new Tileset(tileset, TEST_TILESET_SIZE);
+        Tileset copied_tileset =
+          new Tileset(tileset, TestValues.TEST_TILESET_SIZE);
         
         // change the copied tileset (just shift the indexes)
-        for (int tile = 0; tile < TEST_TILESET_SIZE; tile++) {
+        for (int tile = 0; tile < TestValues.TEST_TILESET_SIZE; tile++) {
           for (int y = 0; y < Tileset.TILE_HEIGHT; y++) {
             for (int x = 0; x < Tileset.TILE_WIDTH; x++) {
               copied_tileset.setPixelIndex(
@@ -565,7 +548,7 @@ public class TilesetTest {
           }
         }
         // check to see if the original tileset has been changed
-        for (int tile = 0; tile < TEST_TILESET_SIZE; tile++) {
+        for (int tile = 0; tile < TestValues.TEST_TILESET_SIZE; tile++) {
           for (int y = 0; y < Tileset.TILE_HEIGHT; y++) {
             for (int x = 0; x < Tileset.TILE_WIDTH; x++) {
               assertEquals(
@@ -579,10 +562,11 @@ public class TilesetTest {
           }
         }
         
-        copied_tileset = new Tileset(tileset, TEST_TILESET_SIZE);  // reset copy
+        copied_tileset =  // reset copy
+          new Tileset(tileset, TestValues.TEST_TILESET_SIZE);
         
         // change the original tileset (just shifting indexes again)
-        for (int tile = 0; tile < TEST_TILESET_SIZE; tile++) {
+        for (int tile = 0; tile < TestValues.TEST_TILESET_SIZE; tile++) {
           for (int y = 0; y < Tileset.TILE_HEIGHT; y++) {
             for (int x = 0; x < Tileset.TILE_WIDTH; x++) {
               tileset.setPixelIndex(
@@ -593,7 +577,7 @@ public class TilesetTest {
           }
         }
         // check to see if the copied tileset has been changed
-        for (int tile = 0; tile < TEST_TILESET_SIZE; tile++) {
+        for (int tile = 0; tile < TestValues.TEST_TILESET_SIZE; tile++) {
           for (int y = 0; y < Tileset.TILE_WIDTH; y++) {
             for (int x = 0; x < Tileset.TILE_WIDTH; x++) {
               assertEquals(
@@ -617,7 +601,7 @@ public class TilesetTest {
   @Test
   public void testTilesetSizedCopyConstructorNullTilesetArgument() {
     assertThrows(NullPointerException.class,
-                 () -> new Tileset(null, TEST_TILESET_SIZE),
+                 () -> new Tileset(null, TestValues.TEST_TILESET_SIZE),
                  "No NullPointerException thrown for null argument.");
   }
   
@@ -628,14 +612,11 @@ public class TilesetTest {
    */
   @Test
   public void testTilesetCopyConstructorIdentical() {
-    // a list of tileset sizes to test the sized constructor with
-    List<Integer> tileset_sizes = List.of(
-      1, TEST_TILESET_SIZE / 2, TEST_TILESET_SIZE, TEST_TILESET_SIZE * 2
-    );
     Random random = new Random();  // used to generate random indexes
     
-    for (int tileset_size : tileset_sizes) {
-      for (int format : TILESET_FORMAT_VALUES) {
+    for (int tileset_size : SELECT_VALID_TILESET_SIZES) {
+      // test the full range of combinates of BPPs and tileset format values
+      for (int format : TestValues.TILESET_FORMAT_VALUES) {
         for (int bpp = Tileset.MIN_BPP; bpp <= Tileset.MAX_BPP; bpp++) {
           int index_bound = 1 << bpp;
 
@@ -689,15 +670,18 @@ public class TilesetTest {
   public void testTilesetCopyConstructorDeepCopy() {
     Random random = new Random();  // used to generate random indexes
     
-    for (int format : TILESET_FORMAT_VALUES) {
+    // test the full range of combinates of BPPs and tileset format values
+    for (int format : TestValues.TILESET_FORMAT_VALUES) {
       for (int bpp = Tileset.MIN_BPP; bpp <= Tileset.MAX_BPP; bpp++) {
         int index_bound = 1 << bpp;
         int[][][] original_indexes =  // [tile][row][column]
-          new int[TEST_TILESET_SIZE][Tileset.TILE_HEIGHT][Tileset.TILE_WIDTH];
+          new int[TestValues.TEST_TILESET_SIZE]
+                 [Tileset.TILE_HEIGHT][Tileset.TILE_WIDTH];
         
         // fill a tileset with random indexes - keep a copy of these indexes
-        Tileset tileset = new Tileset(TEST_TILESET_SIZE, bpp, format);
-        for (int tile = 0; tile < TEST_TILESET_SIZE; tile++) {
+        Tileset tileset = new Tileset(TestValues.TEST_TILESET_SIZE,
+                                      bpp, format);
+        for (int tile = 0; tile < TestValues.TEST_TILESET_SIZE; tile++) {
           for (int y = 0; y < Tileset.TILE_HEIGHT; y++) {
             for (int x = 0; x < Tileset.TILE_WIDTH; x++) {
               int index = random.nextInt(index_bound);
@@ -710,7 +694,7 @@ public class TilesetTest {
         Tileset copied_tileset = new Tileset(tileset);
         
         // change the copied tileset (just shift the indexes)
-        for (int tile = 0; tile < TEST_TILESET_SIZE; tile++) {
+        for (int tile = 0; tile < TestValues.TEST_TILESET_SIZE; tile++) {
           for (int y = 0; y < Tileset.TILE_HEIGHT; y++) {
             for (int x = 0; x < Tileset.TILE_WIDTH; x++) {
               copied_tileset.setPixelIndex(
@@ -721,7 +705,7 @@ public class TilesetTest {
           }
         }
         // check to see if the original tileset has been changed
-        for (int tile = 0; tile < TEST_TILESET_SIZE; tile++) {
+        for (int tile = 0; tile < TestValues.TEST_TILESET_SIZE; tile++) {
           for (int y = 0; y < Tileset.TILE_HEIGHT; y++) {
             for (int x = 0; x < Tileset.TILE_WIDTH; x++) {
               assertEquals(
@@ -738,7 +722,7 @@ public class TilesetTest {
         copied_tileset = new Tileset(tileset);  // reset copy
         
         // change the original tileset (just shifting indexes again)
-        for (int tile = 0; tile < TEST_TILESET_SIZE; tile++) {
+        for (int tile = 0; tile < TestValues.TEST_TILESET_SIZE; tile++) {
           for (int y = 0; y < Tileset.TILE_HEIGHT; y++) {
             for (int x = 0; x < Tileset.TILE_WIDTH; x++) {
               tileset.setPixelIndex(
@@ -749,7 +733,7 @@ public class TilesetTest {
           }
         }
         // check to see if the copied tileset has been changed
-        for (int tile = 0; tile < TEST_TILESET_SIZE; tile++) {
+        for (int tile = 0; tile < TestValues.TEST_TILESET_SIZE; tile++) {
           for (int y = 0; y < Tileset.TILE_WIDTH; y++) {
             for (int x = 0; x < Tileset.TILE_WIDTH; x++) {
               assertEquals(
@@ -817,10 +801,11 @@ public class TilesetTest {
   @Test
   public void testTilesetFormatValues() {
     // count the number of distinct values and see if there are fewer elements
-    long distinct_values = TILESET_FORMAT_VALUES.stream().distinct().count();
-    assertEquals(TILESET_FORMAT_VALUES.size(), distinct_values,
+    long distinct_values =
+      TestValues.TILESET_FORMAT_VALUES.stream().distinct().count();
+    assertEquals(TestValues.TILESET_FORMAT_VALUES.size(), distinct_values,
                  "Only " + Long.toString(distinct_values) + " out of " +
-                 Integer.toString(TILESET_FORMAT_VALUES.size()) +
+                 Integer.toString(TestValues.TILESET_FORMAT_VALUES.size()) +
                  " tileset format values are distinct.");
   }
   
@@ -834,59 +819,21 @@ public class TilesetTest {
    * @return true if the coordinates should be valid and false otherwise.
    */
   private static boolean isValidCoordinates(int tileset_size,
-                                                int tile, int x, int y) {
+                                            int tile, int x, int y) {
     return tile >= 0 && tile < tileset_size &&
            x >= 0 && x < Tileset.TILE_WIDTH &&
            y >= 0 && y < Tileset.TILE_HEIGHT;
   }
   
-  /** A list that should contain of all of the values used to denote distinct
-   tileset formats. */
-  private static final List<Integer> TILESET_FORMAT_VALUES = List.of(
-    Tileset.SERIAL_FORMAT, Tileset.PLANAR_FORMAT,
-    Tileset.LINEAR_INTERTWINED_FORMAT, Tileset.PAIRED_INTERTWINED_FORMAT
+  /** A list of some valid numbers of bits per pixels for these unit tests.
+   These values should be relevant for testing - especially boundaries. */
+  private static final List<Integer> SELECT_VALID_BPPS = List.of(
+    Tileset.MIN_BPP, (Tileset.MIN_BPP + Tileset.MAX_BPP) / 2, Tileset.MAX_BPP
   );
-  
-  private static final int TEST_TILESET_SIZE = 16;
-  
-  // lists of both valid and invalid tileset properties (size, bpp, and format)
-  private static final List<Integer> TEST_TILESET_SIZES = List.of(
-    -1, 0, 1, TEST_TILESET_SIZE, TEST_TILESET_SIZE * 2, Tileset.MAX_TILES + 1
-  );
-  private static final List<Integer> TEST_BPPS =
-    IntStream.rangeClosed(
-      Tileset.MIN_BPP - 1, Tileset.MAX_BPP + 1
-    ).boxed().collect(Collectors.toList());
-  private static final List<Integer> TEST_TILESET_FORMAT_VALUES =
-    IntStream.rangeClosed(
-      Collections.min(TILESET_FORMAT_VALUES) - 1,
-      Collections.max(TILESET_FORMAT_VALUES) + 1
-    ).boxed().collect(Collectors.toList());
-  
-  // lists of both valid and invalid coordinates (tiles and x and y coords)
-  private static final List<Integer> TEST_TILE_NUMS = List.of(
-    // lesser than valid range (invalid)
-    -TEST_TILESET_SIZE, -TEST_TILESET_SIZE / 2, -TEST_TILESET_SIZE / 4, 0,
-    // valid range
-    1, TEST_TILESET_SIZE / 4, TEST_TILESET_SIZE / 2, TEST_TILESET_SIZE - 1,
-    // greater than valid range (invalid)
-    TEST_TILESET_SIZE, TEST_TILESET_SIZE * 2, TEST_TILESET_SIZE * 4
-  );
-  private static final List<Integer> TEST_X_COORDS = List.of(
-    // lesser than valid range (invalid)
-    -Tileset.TILE_WIDTH, -Tileset.TILE_WIDTH / 2, Tileset.TILE_WIDTH / 4, 0,
-    // valid range
-    1, Tileset.TILE_WIDTH / 4, Tileset.TILE_WIDTH / 2, Tileset.TILE_WIDTH - 1,
-    // greater than valid range (invalid)
-    Tileset.TILE_WIDTH, Tileset.TILE_WIDTH * 2, Tileset.TILE_WIDTH * 4
-  );
-  private static final List<Integer> TEST_Y_COORDS = List.of(
-    // lesser than valid range (invalid)
-    -Tileset.TILE_HEIGHT, - Tileset.TILE_HEIGHT / 2, Tileset.TILE_HEIGHT / 4, 0,
-    // valid range
-    1, Tileset.TILE_HEIGHT / 4, Tileset.TILE_HEIGHT / 2,
-    Tileset.TILE_HEIGHT - 1,
-    // greater than valid range (invalid)
-    Tileset.TILE_HEIGHT, Tileset.TILE_HEIGHT * 2, Tileset.TILE_HEIGHT * 4
+  /** A list of some valid tileset sizes (number of tiles) for these unit tests.
+   These values should be relevant for testing - especially boundaries.*/
+  private static final List<Integer> SELECT_VALID_TILESET_SIZES = List.of(
+    1, TestValues.TEST_TILESET_SIZE / 2, TestValues.TEST_TILESET_SIZE,
+    TestValues.TEST_TILESET_SIZE * 2
   );
 }
