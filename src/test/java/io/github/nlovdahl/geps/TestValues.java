@@ -60,7 +60,6 @@ public class TestValues {
       Collections.min(TILESET_FORMAT_VALUES) - 1,
       Collections.max(TILESET_FORMAT_VALUES) + 1
     ).boxed().collect(Collectors.toList());
-  
   /** A list of both valid and valid tileset numbers (the number denoting a
    particular tile in a tileset). */
   public static final List<Integer> TEST_TILE_NUMS = List.of(
@@ -91,5 +90,12 @@ public class TestValues {
     Tileset.TILE_HEIGHT - 1,
     // greater than valid range (invalid)
     Tileset.TILE_HEIGHT, Tileset.TILE_HEIGHT * 2, Tileset.TILE_HEIGHT * 4
+  );
+  
+  /** A list of some valid tileset sizes (number of tiles) for these unit tests.
+   These values should be relevant for testing - especially boundaries.*/
+  public static final List<Integer> SELECT_VALID_TILESET_SIZES = List.of(
+    1, TestValues.TEST_TILESET_SIZE / 2, TestValues.TEST_TILESET_SIZE,
+    TestValues.TEST_TILESET_SIZE * 2
   );
 }
