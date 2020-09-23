@@ -20,6 +20,8 @@ import javax.swing.Scrollable;
 import javax.swing.SwingConstants;
 import java.awt.Rectangle;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
@@ -45,12 +47,17 @@ public final class TilesetView extends JPanel implements Scrollable {
    * @param tileset_controller the controller for the tileset to use.
    * @param palette_controller the controller for the palette to use.
    * @param scale_factor the factor to scale the tileset by.
+   * @param draw_pixel_grid whether or not gridlines should be drawn around each
+   *        of the pixels in the tileset.
+   * @param draw_tile_grid whether or not gridlines should be drawn around
+   *        each of the tiles in the tileset.
    * @throws NullPointerException if tileset_controller or palette_controller
    *         are null.
    * @throws IllegalArgumentException if scale_factor is less than one.
    */
   public TilesetView(TilesetController tileset_controller,
-                    PaletteController palette_controller, int scale_factor) {
+                     PaletteController palette_controller, int scale_factor,
+                     boolean draw_pixel_grid, boolean draw_tile_grid) {
     if (tileset_controller == null) {
       throw new NullPointerException("Cannot use a null tileset controller.");
     } else if (palette_controller == null) {
@@ -62,6 +69,8 @@ public final class TilesetView extends JPanel implements Scrollable {
     tileset_controller_ = tileset_controller;
     palette_controller_ = palette_controller;
     scale_factor_ = scale_factor;
+    draw_pixel_grid_ = draw_pixel_grid;
+    draw_tile_grid_ = draw_tile_grid;
     
     checkDimensions();  // this will setup the base image and dimensions
     
@@ -110,7 +119,8 @@ public final class TilesetView extends JPanel implements Scrollable {
   public int getScaleFactor() { return scale_factor_; }
   
   /**
-   * Sets the scaling factor for the tileset view to the given value.
+   * Sets the scaling factor for the tileset view to the given value. The
+   * tileset will then be redrawn to reflect the scale factor given.
    * 
    * @param scale_factor the new factor to scale the tileset by.
    * @throws IllegalArgumentException if scale_factor is less than one.
@@ -121,6 +131,45 @@ public final class TilesetView extends JPanel implements Scrollable {
     }  // else, the scale factor should be valid
     
     scale_factor_ = scale_factor;
+    repaint();
+  }
+  
+  /**
+   * Returns whether or not the tileset view draws gridlines around each of the
+   * pixels in the tileset.
+   * 
+   * @return true if the pixel grid is drawn, false otherwise.
+   */
+  public boolean isPixelGridDrawn() { return draw_pixel_grid_; }
+  
+  /**
+   * Sets whether or not gridlines should be drawn around each of the pixels in
+   * the tileset. The tileset will then be redrawn.
+   * 
+   * @param draw_pixel_grid whether or not pixel gridlines should be drawn.
+   */
+  public void setDrawPixelGrid(boolean draw_pixel_grid) {
+    draw_pixel_grid_ = draw_pixel_grid;
+    repaint();
+  }
+  
+  /**
+   * Returns whether or not the tileset view draws gridlines around each of the
+   * tiles in the tileset.
+   * 
+   * @return true if the pixel grid is drawn, false otherwise.
+   */
+  public boolean isTileGridDrawn() { return draw_tile_grid_; }
+  
+  /**
+   * Sets whether or not gridlines should be drawn around each of the tiles
+   * in the tileset. The tileset view will then be redrawn.
+   * 
+   * @param draw_tile_grid whether or not tile gridlines should be drawn.
+   */
+  public void setDrawTileGrid(boolean draw_tile_grid) {
+    draw_tile_grid_ = draw_tile_grid;
+    repaint();
   }
   
   @Override
@@ -129,24 +178,27 @@ public final class TilesetView extends JPanel implements Scrollable {
     
     checkDimensions();  // make sure the base image is the right size
     
+    int tileset_x_min = 0, tileset_y_min = 0;
+    int tileset_x_max = 0, tileset_y_max = 0;
+    
     // update the area of the base image which will be contained in the clip
     Rectangle clipArea = graphics.getClipBounds();
     if (clipArea != null) {  // if there is a clip area
       /* overshoot the tileset area corresponding to the clip to avoid missing
       any straddled tileset pixels */
-      int tileset_x_min = Math.max(clipArea.x / scale_factor_ - 1, 0);
-      int tileset_y_min = Math.max(clipArea.y / scale_factor_ - 1, 0);
-      int tileset_x_max =
+      tileset_x_min = Math.max(clipArea.x / scale_factor_ - 1, 0);
+      tileset_y_min = Math.max(clipArea.y / scale_factor_ - 1, 0);
+      tileset_x_max =
         Math.min((clipArea.x + clipArea.width) / scale_factor_ + 1,
                  tileset_controller_.getWidthInPixels());
-      int tileset_y_max =
+      tileset_y_max =
         Math.min((clipArea.y + clipArea.height) / scale_factor_ + 1,
                  tileset_controller_.getHeightInPixels());
       
       for (int y = tileset_y_min; y < tileset_y_max; y++) {
         for (int x = tileset_x_min; x < tileset_x_max; x++) {
-          Color pixel_color = tileset_controller_.getPixelColor(
-                                x, y, palette_controller_);
+          Color pixel_color =
+            tileset_controller_.getPixelColor(x, y, palette_controller_);
           if (pixel_color != null) {  // use the color if coordinates are valid
             base_image_.setRGB(x, y, pixel_color.getRGB());
           } else {  // else, draw a transparent color (no tileset here)
@@ -156,9 +208,55 @@ public final class TilesetView extends JPanel implements Scrollable {
       }
     }
     
-    // finally, draw the image while scaling it on the fly
+    // draw the image while scaling it on the fly
     graphics.drawImage(base_image_, 0, 0, scaled_image_size_.width,
                        scaled_image_size_.height, getBackground(), null);
+    
+    // proceed to draw gridlines (so long as there is a clip area to reference)
+    if (clipArea != null) {
+      // create graphics object to use more advanced strokes
+      Graphics2D g2d = (Graphics2D) graphics.create();
+      
+      // draw gridlines for the pixels if needed
+      if (draw_pixel_grid_) {
+        // use some transparency for pixel gridlines
+        g2d.setColor(new Color(0, 0, 0, 0.3f));
+        
+        // draw the vertical gridlines
+        for (int x = tileset_x_min; x < tileset_x_max; x++) {
+          g2d.drawLine(x * scale_factor_, clipArea.y,
+                       x * scale_factor_, clipArea.y + clipArea.height);
+        }
+        // draw the horizontal gridlines
+        for (int y = tileset_y_min; y < tileset_y_max; y++) {
+          g2d.drawLine(clipArea.x, y * scale_factor_,
+                       clipArea.x + clipArea.width, y * scale_factor_);
+        }
+      }
+      
+      // draw gridlines for the tiles if needed
+      if (draw_tile_grid_) {
+        // use a completely opaque tile gridline
+        g2d.setColor(new Color(0, 0, 0, 1f));
+        // use a stroke thickness based on the scale factor
+        g2d.setStroke(
+          new BasicStroke((float) (Math.log(scale_factor_) / Math.log(2)) / 2)
+        );
+        
+        // draw the vertical gridlines
+        for (int x = tileset_x_min & -16;
+                 x < tileset_x_max; x += Tileset.TILE_WIDTH) {
+          g2d.drawLine(x * scale_factor_, clipArea.y,
+                       x * scale_factor_, clipArea.y + clipArea.height);
+        }
+        // draw the horizontal gridlines
+        for (int y = tileset_y_min & -16;
+                 y < tileset_y_max; y += Tileset.TILE_HEIGHT) {
+          g2d.drawLine(clipArea.x, y * scale_factor_,
+                       clipArea.x + clipArea.width, y * scale_factor_);
+        }
+      }
+    }
   }
   
   @Override
@@ -293,8 +391,11 @@ public final class TilesetView extends JPanel implements Scrollable {
   private int last_tileset_x_;
   private int last_tileset_y_;
   
-  private BufferedImage base_image_;
   private int scale_factor_;
+  private boolean draw_pixel_grid_;
+  private boolean draw_tile_grid_;
+  
+  private BufferedImage base_image_;
   private Dimension scaled_image_size_;
   
   private final TilesetController tileset_controller_;

@@ -19,23 +19,29 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JSplitPane;
 import javax.swing.JScrollPane;
+
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.ButtonGroup;
 import javax.swing.JSeparator;
+
 import javax.swing.SpinnerNumberModel;
 import javax.swing.JSpinner;
+
 import javax.swing.WindowConstants;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
-import java.beans.PropertyChangeEvent;
+
 import java.awt.Container;
 import java.awt.BorderLayout;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.ActionEvent;
+import java.beans.PropertyChangeEvent;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -76,6 +82,8 @@ public final class MainWindow extends JFrame {
     int initial_bpp = 4;
     int initial_bitplane_format = Tileset.PAIRED_INTERTWINED_FORMAT;
     int initial_tileset_scale_factor = 4;  // x4 scaler
+    boolean draw_pixel_grid = true;
+    boolean draw_tile_grid = true;
     
     palette_controller_ = new PaletteController(initial_bpp);
     tileset_controller_ = new TilesetController(
@@ -84,7 +92,8 @@ public final class MainWindow extends JFrame {
     
     palette_view_ = new PaletteView(this, palette_controller_);
     tileset_view_ = new TilesetView(
-      tileset_controller_, palette_controller_, initial_tileset_scale_factor);  
+      tileset_controller_, palette_controller_, initial_tileset_scale_factor,
+      draw_pixel_grid, draw_tile_grid);  
     
     // initialize the menu bar
     JMenuBar menu_bar = new JMenuBar();
@@ -136,6 +145,16 @@ public final class MainWindow extends JFrame {
     edit_menu.add(palette_redo_menu_item_);
     
     JMenu view_menu = new JMenu("View");  // view menu initialization...
+    draw_pixel_grid_menu_item_ = new JCheckBoxMenuItem("Show Pixel Gridlines");
+    draw_pixel_grid_menu_item_.addActionListener(
+      this::DrawPixelGridChangeAction
+    );
+    draw_pixel_grid_menu_item_.setSelected(draw_pixel_grid);
+    view_menu.add(draw_pixel_grid_menu_item_);
+    draw_tile_grid_menu_item_ = new JCheckBoxMenuItem("Show Tile Gridlines");
+    draw_tile_grid_menu_item_.addActionListener(this::DrawTileGridChangeAction);
+    draw_tile_grid_menu_item_.setSelected(draw_tile_grid);
+    view_menu.add(draw_tile_grid_menu_item_);
     JMenuItem tileset_width_menu_item = new JMenuItem("Tileset Width...");
     tileset_width_menu_item.addActionListener(this::TilesetWidthChangeAction);
     view_menu.add(tileset_width_menu_item);
@@ -549,6 +568,14 @@ public final class MainWindow extends JFrame {
     }
   }
   
+  private void DrawPixelGridChangeAction(ActionEvent event) {
+    tileset_view_.setDrawPixelGrid(draw_pixel_grid_menu_item_.isSelected());
+  }
+  
+  private void DrawTileGridChangeAction(ActionEvent event) {
+    tileset_view_.setDrawTileGrid(draw_tile_grid_menu_item_.isSelected());
+  }
+  
   private void TilesetWidthChangeAction(ActionEvent event) {
     // create a s[inner that starts with the current tileset width
     SpinnerNumberModel tileset_width_spinner_model =
@@ -575,7 +602,6 @@ public final class MainWindow extends JFrame {
     // parse the command, except the first character, which should be the number
     int scale_factor = Integer.parseInt(event.getActionCommand().substring(1));
     tileset_view_.setScaleFactor(scale_factor);
-    tileset_view_.repaint();  // repaint the tileset with the new scaling factor
   }
   
   private void TilesetSizeChangeAction(ActionEvent event) {
@@ -742,11 +768,13 @@ public final class MainWindow extends JFrame {
   private static final String PAIRED_INTERTWINED_FORMAT_STRING =
     "Intertwined (Paired)";
   
-  // parts of the UI that need to be accessible to be updated dynamically
+  // parts of the UI that need to be accessible and / or be updated dynamically
   private final JMenuItem tileset_undo_menu_item_;
   private final JMenuItem tileset_redo_menu_item_;
   private final JMenuItem palette_undo_menu_item_;
   private final JMenuItem palette_redo_menu_item_;
+  private final JCheckBoxMenuItem draw_pixel_grid_menu_item_;
+  private final JCheckBoxMenuItem draw_tile_grid_menu_item_;
   private final JRadioButtonMenuItem one_bpp_item_;
   private final JRadioButtonMenuItem two_bpp_item_;
   private final JRadioButtonMenuItem three_bpp_item_;
