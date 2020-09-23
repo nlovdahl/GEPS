@@ -106,6 +106,12 @@ public final class TilesetInterpreter {
    * data can be reconstructed using
    * {@link #encodeTileset(io.github.nlovdahl.geps.Tileset)}.
    * 
+   * If there are extra bytes which cannot be decoded into a whole tile, then
+   * the tileset returned will be padded with enough extra data so that there is
+   * a whole number of tiles. The padded part of the tileset will have no
+   * pattern such that if the tileset is encoded again, then any extra bytes
+   * will be zeroes.
+   * 
    * @param tileset_data the bytes to be interpreted.
    * @param bpp the number of bits per pixel used for interpretation.
    * @param tileset_format the tileset format used to interpretation.
