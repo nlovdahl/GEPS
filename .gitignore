@@ -22,5 +22,6 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 
-# ignore the target created using Maven
+# ignore the target created using Maven and the output from testing
 target
+src/test/resources/output_actual

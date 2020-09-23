@@ -113,7 +113,7 @@ public class TilesetTest {
    */
   @Test
   public void testGetNumberOfTiles() {
-    for (int tileset_size : SELECT_VALID_TILESET_SIZES) {
+    for (int tileset_size : TestValues.SELECT_VALID_TILESET_SIZES) {
       Tileset tileset = new Tileset(tileset_size, TestValues.TEST_BPP,
                                     TestValues.TEST_TILESET_FORMAT_VALUE);
       
@@ -376,7 +376,7 @@ public class TilesetTest {
    */
   @Test
   public void testTilesetConstructorInitialPixelIndexes() {
-    // test the full range of combinates of BPPs and tileset format values
+    // test the full range of combinations of BPPs and tileset format values
     for (int tileset_format : TestValues.TILESET_FORMAT_VALUES) {
       for (int bpp : SELECT_VALID_BPPS) {
         // create a new tileset with the BPP and format to check
@@ -442,7 +442,7 @@ public class TilesetTest {
   public void testTilesetSizedCopyConstructorIdentical() {
     Random random = new Random();  // used to generate random indexes
     
-    // test the full range of combinates of BPPs and tileset format values
+    // test the full range of combinations of BPPs and tileset format values
     for (int format : TestValues.TILESET_FORMAT_VALUES) {
       for (int bpp = Tileset.MIN_BPP; bpp <= Tileset.MAX_BPP; bpp++) {
         int index_bound = 1 << bpp;
@@ -459,7 +459,7 @@ public class TilesetTest {
         }
         
         // test various sizes for the copy constructors
-        for (int tileset_size : SELECT_VALID_TILESET_SIZES) {
+        for (int tileset_size : TestValues.SELECT_VALID_TILESET_SIZES) {
           Tileset copied_tileset = new Tileset(tileset, tileset_size);
           
           // check that the tilesets have the same bpp and tileset format
@@ -512,7 +512,7 @@ public class TilesetTest {
   public void testTilesetSizedCopyConstructorDeepCopy() {
     Random random = new Random();  // used to generate random indexes
     
-    // test the full range of combinates of BPPs and tileset format values
+    // test the full range of combinations of BPPs and tileset format values
     for (int format : TestValues.TILESET_FORMAT_VALUES) {
       for (int bpp = Tileset.MIN_BPP; bpp <= Tileset.MAX_BPP; bpp++) {
         int index_bound = 1 << bpp;
@@ -614,8 +614,8 @@ public class TilesetTest {
   public void testTilesetCopyConstructorIdentical() {
     Random random = new Random();  // used to generate random indexes
     
-    for (int tileset_size : SELECT_VALID_TILESET_SIZES) {
-      // test the full range of combinates of BPPs and tileset format values
+    for (int tileset_size : TestValues.SELECT_VALID_TILESET_SIZES) {
+      // test the full range of combinations of BPPs and tileset format values
       for (int format : TestValues.TILESET_FORMAT_VALUES) {
         for (int bpp = Tileset.MIN_BPP; bpp <= Tileset.MAX_BPP; bpp++) {
           int index_bound = 1 << bpp;
@@ -670,7 +670,7 @@ public class TilesetTest {
   public void testTilesetCopyConstructorDeepCopy() {
     Random random = new Random();  // used to generate random indexes
     
-    // test the full range of combinates of BPPs and tileset format values
+    // test the full range of combinations of BPPs and tileset format values
     for (int format : TestValues.TILESET_FORMAT_VALUES) {
       for (int bpp = Tileset.MIN_BPP; bpp <= Tileset.MAX_BPP; bpp++) {
         int index_bound = 1 << bpp;
@@ -829,11 +829,5 @@ public class TilesetTest {
    These values should be relevant for testing - especially boundaries. */
   private static final List<Integer> SELECT_VALID_BPPS = List.of(
     Tileset.MIN_BPP, (Tileset.MIN_BPP + Tileset.MAX_BPP) / 2, Tileset.MAX_BPP
-  );
-  /** A list of some valid tileset sizes (number of tiles) for these unit tests.
-   These values should be relevant for testing - especially boundaries.*/
-  private static final List<Integer> SELECT_VALID_TILESET_SIZES = List.of(
-    1, TestValues.TEST_TILESET_SIZE / 2, TestValues.TEST_TILESET_SIZE,
-    TestValues.TEST_TILESET_SIZE * 2
   );
 }

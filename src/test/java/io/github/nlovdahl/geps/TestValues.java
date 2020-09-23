@@ -98,4 +98,16 @@ public class TestValues {
     1, TestValues.TEST_TILESET_SIZE / 2, TestValues.TEST_TILESET_SIZE,
     TestValues.TEST_TILESET_SIZE * 2
   );
+  
+  /** The path to the test tileset pattern file. */
+  public static final String INPUT_PATH = "src/test/resources/input/";
+  /** The path to where the actual output from tests should go. */
+  public static final String ACTUAL_OUTPUT_PATH =
+    "src/test/resources/output_actual/";
+  /** The path to the expected output from tests is. */
+  public static final String EXPECTED_OUTPUT_PATH =
+    "src/test/resources/output_expected/";
+  
+  public static final String TEST_TILESET_PATTERN_PATH =
+    INPUT_PATH + "test_pattern.chr";
 }

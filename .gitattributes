@@ -1,0 +1,4 @@
+# Tileset and Palette files and data files for testing are binary
+*.chr binary
+*.pal binary
+*.dat binary
