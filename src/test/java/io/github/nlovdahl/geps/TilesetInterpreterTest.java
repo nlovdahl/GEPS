@@ -69,6 +69,9 @@ public class TilesetInterpreterTest {
     
     test_pattern_data_ = test_pattern_data;
     test_pattern_tileset_ = test_pattern_tileset;
+    
+    // create the directory for actual output if it doesn't already exist
+    new File(TestValues.ACTUAL_OUTPUT_PATH).mkdir();
   }
   
   /**
