@@ -150,6 +150,7 @@ public final class SNESFileChooser extends JFileChooser {
   public File selectTilesetFileToOpen() {
     resetChoosableFileFilters();
     setFileFilter(TILESET_FILE_FILTER);
+    base_extension_ = CHR_EXTENSION;
     File chosen_file = chooseFileToOpen();
     
     // if the user made a selection (not null)
@@ -173,6 +174,7 @@ public final class SNESFileChooser extends JFileChooser {
   public File selectTilesetFileToSave() {
     resetChoosableFileFilters();
     setFileFilter(TILESET_FILE_FILTER);
+    base_extension_ = CHR_EXTENSION;
     File chosen_file = chooseFileToSave();
     
     // if the user made a selection (not null)
@@ -196,6 +198,7 @@ public final class SNESFileChooser extends JFileChooser {
   public File selectPaletteFileToOpen() {
     resetChoosableFileFilters();
     setFileFilter(PALETTE_FILE_FILTER);
+    base_extension_ = PAL_EXTENSION;
     File chosen_file = chooseFileToOpen();
     
     // if the user made a selection (not null)
@@ -219,6 +222,7 @@ public final class SNESFileChooser extends JFileChooser {
   public File selectPaletteFileToSave() {
     resetChoosableFileFilters();
     setFileFilter(PALETTE_FILE_FILTER);
+    base_extension_ = PAL_EXTENSION;
     File chosen_file = chooseFileToSave();
     
     // if the user made a selection (not null)
