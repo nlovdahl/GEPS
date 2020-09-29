@@ -66,7 +66,7 @@ public final class TilesetController {
       throw new IllegalArgumentException("Invalid tileset format value.");
     }  // else, all arguments should be valid
     
-    tileset_width_ = width;
+    max_tileset_width_ = width;
     initial_tileset_width_ = width;
     initial_tileset_height_ = height;
     initial_bpp_ = bpp;
@@ -81,27 +81,30 @@ public final class TilesetController {
   }
   
   /**
+   * Gets the number of tiles in the current tileset. This method is a wrapper
+   * for the {@link Tileset#getNumberOfTiles()} method.
+   * 
+   * @return the number of tiles in the current tileset.
+   */
+  public int getNumberOfTiles() { return current_tileset_.getNumberOfTiles(); }
+  
+  /**
+   * Gets the maximum number of tiles that can be in a single row of tiles in
+   * the tileset. Note that this is not necessarily the same as the tileset's
+   * actual width in tiles.
+   * 
+   * @return the maximum number of tiles that can be in a single row of tiles.
+   */
+  public int getMaxWidthInTiles() { return max_tileset_width_; }
+  
+  /**
    * Gets the width of the tileset in tiles. That is, the number of tiles
    * spanning the tileset horizontally.
    * 
    * @return the number of tiles spanning the tileset horizontally.
    */
-  public int getWidthInTiles() { return tileset_width_; }
-  
-  /**
-   * Gets the height of the tileset. That is, the number of tiles spanning the
-   * tileset vertically.
-   * 
-   * @return the number of tiles spanning the tileset vertically.
-   */
-  public int getHeightInTiles() {
-    int tileset_height = current_tileset_.getNumberOfTiles() / tileset_width_;
-    // add on if there are extra tiles (but not enough to fill a row)
-    if (current_tileset_.getNumberOfTiles() % tileset_width_ != 0) {
-      tileset_height++;
-    }
-    
-    return tileset_height;
+  public int getWidthInTiles() {
+    return Math.min(max_tileset_width_, getNumberOfTiles());
   }
   
   /**
@@ -111,26 +114,34 @@ public final class TilesetController {
    * @return the number of pixels spanning the tileset horizontally.
    */
   public int getWidthInPixels() {
-    return tileset_width_ * Tileset.TILE_WIDTH;
+    return getWidthInTiles() * Tileset.TILE_WIDTH;
+  }
+  
+  /**
+   * Gets the height of the tileset in tiles. That is, the number of tiles
+   * spanning the tileset vertically.
+   * 
+   * @return the number of tiles spanning the tileset vertically.
+   */
+  public int getHeightInTiles() {
+    int num_tiles = getNumberOfTiles();
+    int tileset_width = getWidthInTiles();
+    int tileset_height = num_tiles / tileset_width;
+    // add on if there are extra tiles (but not enough to fill a row)
+    if (num_tiles % tileset_width != 0) { tileset_height++; }
+    
+    return tileset_height;
   }
   
   /**
    * Gets the height of the tileset in pixels. That is, the number of pixels
-   * spanning the tileser vertically.
+   * spanning the tileset vertically.
    * 
    * @return the height of the tileset in pixels.
    */
   public int getHeightInPixels() {
     return getHeightInTiles() * Tileset.TILE_HEIGHT;
   }
-  
-  /**
-   * Gets the number of tiles in the current tileset. This method is a wrapper
-   * for the {@link Tileset#getNumberOfTiles()} method.
-   * 
-   * @return the number of tiles in the current tileset.
-   */
-  public int getNumberOfTiles() { return current_tileset_.getNumberOfTiles(); }
   
   /**
    * Gets the number of bits per pixel being used by the current tileset. This
@@ -148,91 +159,6 @@ public final class TilesetController {
    * @return the number denoting the current tileset's format.
    */
   public int getTilesetFormat() { return current_tileset_.getTilesetFormat(); }
-  
-  /**
-   * Resets the current tileset so that it is the same as it was when the
-   * tileset controller was first created - this will also remove any states for
-   * possible undos and redos, and record that there are now no unsaved changes.
-   * The tileset will have the width, height, bits per pixel, and tileset
-   * format as initially given to the constructor.
-   */
-  public void resetTileset() {
-    tileset_width_ = initial_tileset_width_;
-    undo_states_.clear();
-    redo_states_.clear();
-    unsaved_changes_ = false;
-    current_tileset_ = new Tileset(
-      initial_tileset_width_ * initial_tileset_height_,
-      initial_bpp_, initial_tileset_format_);
-    checkTilesetWidth();
-  }
-  
-  /**
-   * Reads the given file to interpret its data as a new tileset for the
-   * controller and returns the number of bytes that were not loaded. This
-   * method will also clear all saved undo and redo states and record that there
-   * are no unsaved changes. If there is a problem reading the file, then the
-   * tileset will not be altered, the undo and redo states will remain, and the
-   * status of unsaved changed will be unchanged.
-   * 
-   * @param file the file to load a tileset from.
-   * @return the number of bytes from the file that were not loaded.
-   * @throws FileNotFoundException if file cannot be found or accessed.
-   * @throws IOException if there is an IO problem reading from the file.
-   */
-  public long loadTileset(File file) throws FileNotFoundException, IOException {
-    long file_size, bytes_loaded;
-    
-    // try with resources to create an input stream
-    try (FileInputStream input_stream = new FileInputStream(file)) {
-      file_size = file.length();
-      
-      int max_bits = Tileset.MAX_TILES * Tileset.bitsPerTile(getBPP());
-      int max_bytes = max_bits / 8;
-      // add a byte if there are leftover bits, but not enough for a whole byte
-      if (max_bits % 8 != 0) { max_bytes++; }
-      // read max_bytes at most and decode them
-      byte[] tileset_data = input_stream.readNBytes(max_bytes);
-      current_tileset_ = TilesetInterpreter.decodeBytes(
-                           tileset_data, getBPP(), getTilesetFormat());
-      checkTilesetWidth();
-      bytes_loaded = tileset_data.length;
-      
-      undo_states_.clear();
-      redo_states_.clear();
-      unsaved_changes_ = false;
-    }  // input stream should auto-close since we use try with resources
-    
-    return file_size - bytes_loaded;
-  }
-  
-  /**
-   * Writes the current tileset to the given file. This method will also record
-   * that there are no unsaved changes. If there is a problem saving to the
-   * file, then that status of unsaved changes will be unchanged. If the given
-   * file does not already exist, then it should be created. Alternatively, if
-   * the file already exists, then the existing file will be overwritten.
-   * 
-   * @param file the file to save the controller's current tileset to.
-   * @throws FileNotFoundException if the file cannot be accessed.
-   * @throws IOException if there is an IO problem writing to the file.
-   */
-  public void saveTileset(File file) throws FileNotFoundException, IOException {
-    // try with resources to create an output stream that does not append
-    try (FileOutputStream output_stream = new FileOutputStream(file, false)) {
-      output_stream.write(TilesetInterpreter.encodeTileset(current_tileset_));
-      unsaved_changes_ = false;
-    }  // output stream should auto-close since we use try with resources
-  }
-  
-  /**
-   * Returns whether or not there are unsaved changes to the tileset. This will
-   * not change for changes which do not actually alter the contents of the
-   * tileset, such as changing the width of the tileset.
-   * 
-   * @return true if there are unsaved changes to the tileset, false otherwise.
-   */
-  public boolean hasUnsavedChanges() { return unsaved_changes_; }
   
   /**
    * Gets the index for a color in the palette from a pixel in the tileset.
@@ -282,21 +208,24 @@ public final class TilesetController {
   }
   
   /**
-   * Sets the tileset width in tiles to the given value. If the new width is
-   * greater than the number of tiles in the current tileset, however, then the
-   * width of the tileset will be set to the number of tiles.
+   * Sets the maximum width in tiles of the tileset to the given value. Tiles
+   * in the tileset will be positioned such that the number of tiles on any
+   * row is less than or equal to this value.
+   * <p>
+   * This method will not change the number of tiles in the tileset - only how
+   * existing tiles are positioned.
    * 
-   * @param tileset_width the new width of the tileset in tiles.
-   * @throws IllegalArgumentException if tileset_width is less than one.
+   * @param max_tileset_width the new maximum width of the tileset in tiles.
+   * @throws IllegalArgumentException if max_tileset_width is less than one.
    */
-  public void setTilesetWidth(int tileset_width) {
-    if (tileset_width < 1) {
+  public void setMaxTilesetWidth(int max_tileset_width) {
+    if (max_tileset_width < 1) {
       throw new IllegalArgumentException(
-        "Cannot set tileset width to less than one.");
+        "Cannot set max tileset width to " +
+        Integer.toString(max_tileset_width) + ".");
     }  // else, the width of the tileset should be fine
     
-    tileset_width_ = tileset_width;
-    checkTilesetWidth();
+    max_tileset_width_ = max_tileset_width;
   }
   
   /**
@@ -332,7 +261,6 @@ public final class TilesetController {
       saveForUndo();
       redo_states_.clear();
       current_tileset_ = new Tileset(current_tileset_, tiles);
-      checkTilesetWidth();
       unsaved_changes_ = true;
     }
   }
@@ -375,7 +303,6 @@ public final class TilesetController {
       }
       
       current_tileset_ = reinterpreted_tileset_;
-      checkTilesetWidth();
     }
   }
   
@@ -397,6 +324,89 @@ public final class TilesetController {
       current_tileset_ = TilesetInterpreter.reinterpretTileset(
         current_tileset_, getBPP(), tileset_format);
     }
+  }
+  
+  /**
+   * Returns whether or not there are unsaved changes to the tileset. This will
+   * not change for changes which do not actually alter the contents of the
+   * tileset, such as changing the width of the tileset.
+   * 
+   * @return true if there are unsaved changes to the tileset, false otherwise.
+   */
+  public boolean hasUnsavedChanges() { return unsaved_changes_; }
+  
+  /**
+   * Resets the current tileset so that it is the same as it was when the
+   * tileset controller was first created - this will also remove any states for
+   * possible undos and redos, and record that there are now no unsaved changes.
+   * The tileset will have the same width, height, bits per pixel, and tileset
+   * format as initially given to the constructor.
+   */
+  public void resetTileset() {
+    max_tileset_width_ = initial_tileset_width_;
+    undo_states_.clear();
+    redo_states_.clear();
+    unsaved_changes_ = false;
+    current_tileset_ = new Tileset(
+      initial_tileset_width_ * initial_tileset_height_,
+      initial_bpp_, initial_tileset_format_);
+  }
+  
+  /**
+   * Reads the given file to interpret its data as a new tileset for the
+   * controller and returns the number of bytes that were not loaded. This
+   * method will also clear all saved undo and redo states and record that there
+   * are no unsaved changes. If there is a problem reading the file, then the
+   * tileset will not be altered, the undo and redo states will remain, and the
+   * status of unsaved changed will be unchanged.
+   * 
+   * @param file the file to load a tileset from.
+   * @return the number of bytes from the file that were not loaded.
+   * @throws FileNotFoundException if file cannot be found or accessed.
+   * @throws IOException if there is an IO problem reading from the file.
+   */
+  public long loadTileset(File file) throws FileNotFoundException, IOException {
+    long file_size, bytes_loaded;
+    
+    // try with resources to create an input stream
+    try (FileInputStream input_stream = new FileInputStream(file)) {
+      file_size = file.length();
+      
+      int max_bits = Tileset.MAX_TILES * Tileset.bitsPerTile(getBPP());
+      int max_bytes = max_bits / 8;
+      // add a byte if there are leftover bits, but not enough for a whole byte
+      if (max_bits % 8 != 0) { max_bytes++; }
+      // read max_bytes at most and decode them
+      byte[] tileset_data = input_stream.readNBytes(max_bytes);
+      current_tileset_ = TilesetInterpreter.decodeBytes(
+                           tileset_data, getBPP(), getTilesetFormat());
+      bytes_loaded = tileset_data.length;
+      
+      undo_states_.clear();
+      redo_states_.clear();
+      unsaved_changes_ = false;
+    }  // input stream should auto-close since we use try with resources
+    
+    return file_size - bytes_loaded;
+  }
+  
+  /**
+   * Writes the current tileset to the given file. This method will also record
+   * that there are no unsaved changes. If there is a problem saving to the
+   * file, then that status of unsaved changes will be unchanged. If the given
+   * file does not already exist, then it should be created. Alternatively, if
+   * the file already exists, then the existing file will be overwritten.
+   * 
+   * @param file the file to save the controller's current tileset to.
+   * @throws FileNotFoundException if the file cannot be accessed.
+   * @throws IOException if there is an IO problem writing to the file.
+   */
+  public void saveTileset(File file) throws FileNotFoundException, IOException {
+    // try with resources to create an output stream that does not append
+    try (FileOutputStream output_stream = new FileOutputStream(file, false)) {
+      output_stream.write(TilesetInterpreter.encodeTileset(current_tileset_));
+      unsaved_changes_ = false;
+    }  // output stream should auto-close since we use try with resources
   }
   
   /**
@@ -510,7 +520,6 @@ public final class TilesetController {
       redo_states_.addFirst(TilesetInterpreter.encodeTileset(current_tileset_));
       current_tileset_ = TilesetInterpreter.decodeBytes(
         undo_states_.removeFirst(), getBPP(), getTilesetFormat());
-      checkTilesetWidth();
     }  // else, there is nothing to undo...
   }
   
@@ -527,7 +536,6 @@ public final class TilesetController {
       undo_states_.addFirst(TilesetInterpreter.encodeTileset(current_tileset_));
       current_tileset_ = TilesetInterpreter.decodeBytes(
         redo_states_.removeFirst(), getBPP(), getTilesetFormat());
-      checkTilesetWidth();
     }  // else, there is nothing to redo
   }
   
@@ -539,16 +547,10 @@ public final class TilesetController {
     undo_states_.addFirst(TilesetInterpreter.encodeTileset(current_tileset_));
   }
   
-  // checks tileset width to the current number of tiles and corrects if needed
-  // this should be called any time that the current tileset is changed
-  private void checkTilesetWidth() {
-    int num_tiles = current_tileset_.getNumberOfTiles();
-    if (tileset_width_ > num_tiles) { tileset_width_ = num_tiles; }
-  }
-  
   // gets the index number for a tile for given coordinates in the tileset
   private int getTileNumber(int x, int y) {
-    return tileset_width_ * (y / Tileset.TILE_HEIGHT) + x / Tileset.TILE_WIDTH;
+    return (y / Tileset.TILE_HEIGHT) * getWidthInTiles() +
+           x / Tileset.TILE_WIDTH;
   }
   
   // sets the index for the specified coordinates in the current tileset
@@ -577,7 +579,7 @@ public final class TilesetController {
   private boolean isPointInTileset(int x, int y) {
     return x >= 0 && y >= 0 &&
            x < getWidthInPixels() && y < getHeightInPixels() &&
-           getTileNumber(x, y) < current_tileset_.getNumberOfTiles();
+           getTileNumber(x, y) < getNumberOfTiles();
   }
   
   // draw a line on the tileset between the two specified coordinates
@@ -633,7 +635,7 @@ public final class TilesetController {
   /** The maximum number of states that will be recorded to be redone. */
   public static final int MAX_REDOS = 30;
   
-  private int tileset_width_;   // number of tiles from left to right
+  private int max_tileset_width_;   // max number of tiles from left to right
   
   private boolean stroke_active_;
   private boolean stroke_change_;

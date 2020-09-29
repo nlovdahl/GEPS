@@ -155,9 +155,12 @@ public final class MainWindow extends JFrame {
     draw_tile_grid_menu_item_.addActionListener(this::DrawTileGridChangeAction);
     draw_tile_grid_menu_item_.setSelected(draw_tile_grid);
     view_menu.add(draw_tile_grid_menu_item_);
-    JMenuItem tileset_width_menu_item = new JMenuItem("Tileset Width...");
-    tileset_width_menu_item.addActionListener(this::TilesetWidthChangeAction);
-    view_menu.add(tileset_width_menu_item);
+    JMenuItem tileset_max_width_menu_item =
+      new JMenuItem("Max Tileset Width...");
+    tileset_max_width_menu_item.addActionListener(
+      this::TilesetMaxWidthChangeAction
+    );
+    view_menu.add(tileset_max_width_menu_item);
     JMenu tileset_zoom_submenu = new JMenu("Tileset Zoom");
     ButtonGroup tileset_zoom_item_group = new ButtonGroup();
     JRadioButtonMenuItem tileset_zoom_1_item = new JRadioButtonMenuItem("x1");
@@ -576,23 +579,23 @@ public final class MainWindow extends JFrame {
     tileset_view_.setDrawTileGrid(draw_tile_grid_menu_item_.isSelected());
   }
   
-  private void TilesetWidthChangeAction(ActionEvent event) {
-    // create a s[inner that starts with the current tileset width
-    SpinnerNumberModel tileset_width_spinner_model =
-      new SpinnerNumberModel(tileset_controller_.getWidthInTiles(),
+  private void TilesetMaxWidthChangeAction(ActionEvent event) {
+    // create a spinner that starts with the current max tileset width
+    SpinnerNumberModel max_width_spinner_model =
+      new SpinnerNumberModel(tileset_controller_.getMaxWidthInTiles(),
                              1, Tileset.MAX_TILES, 1);  // min, max, step
-    JSpinner tileset_width_spinner = new JSpinner(tileset_width_spinner_model);
+    JSpinner max_width_spinner = new JSpinner(max_width_spinner_model);
     int result = JOptionPane.showOptionDialog(
-      this, tileset_width_spinner, "Select New Tileset Width",
+      this, max_width_spinner, "Select New Max Tileset Width",
       JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE,
       null, null, null);  // default icon and no options (we use the spinner)
     
     // change the tileset width if the user made a choice, do nothing otherwise
     if (result == JOptionPane.OK_OPTION) {
-      int new_tileset_width = (int) tileset_width_spinner.getValue();
+      int new_max_width = (int) max_width_spinner.getValue();
       // only do something if the number is different
-      if (new_tileset_width != tileset_controller_.getWidthInTiles()) {
-        tileset_controller_.setTilesetWidth(new_tileset_width);
+      if (new_max_width != tileset_controller_.getMaxWidthInTiles()) {
+        tileset_controller_.setMaxTilesetWidth(new_max_width);
         tileset_view_.repaint();
       }
     }
