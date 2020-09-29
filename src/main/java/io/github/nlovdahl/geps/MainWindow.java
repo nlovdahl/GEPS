@@ -77,11 +77,11 @@ public final class MainWindow extends JFrame {
     snes_file_chooser_ = new SNESFileChooser(this);
     
     // initialize the controllers and views
-    int initial_tileset_width = 8;
-    int initial_tileset_height = 8;
+    int initial_tileset_width = 4;
+    int initial_tileset_height = 4;
     int initial_bpp = 4;
     int initial_bitplane_format = Tileset.PAIRED_INTERTWINED_FORMAT;
-    int initial_tileset_scale_factor = 4;  // x4 scaler
+    int initial_tileset_scale_factor = 8;  // x8 scaler
     boolean draw_pixel_grid = true;
     boolean draw_tile_grid = true;
     
@@ -184,7 +184,7 @@ public final class MainWindow extends JFrame {
     tileset_zoom_submenu.add(tileset_zoom_32_item);
     tileset_zoom_item_group.add(tileset_zoom_32_item);
     tileset_zoom_32_item.addActionListener(this::TilesetZoomChangeAction);
-    tileset_zoom_4_item.setSelected(true);  // begin with x4 zoom by default
+    tileset_zoom_8_item.setSelected(true);  // begin with x8 zoom by default
     view_menu.add(tileset_zoom_submenu);
     
     JMenu format_menu = new JMenu("Format");  // format menu initialization...
