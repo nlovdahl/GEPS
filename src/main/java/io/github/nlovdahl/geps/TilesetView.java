@@ -20,8 +20,6 @@ import javax.swing.Scrollable;
 import javax.swing.SwingConstants;
 import java.awt.Rectangle;
 import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
@@ -212,48 +210,46 @@ public final class TilesetView extends JPanel implements Scrollable {
     graphics.drawImage(base_image_, 0, 0, scaled_image_size_.width,
                        scaled_image_size_.height, getBackground(), null);
     
-    // proceed to draw gridlines (so long as there is a clip area to reference)
-    if (clipArea != null) {
-      // create graphics object to use more advanced strokes
-      Graphics2D g2d = (Graphics2D) graphics.create();
-      
-      // draw gridlines for the pixels if needed
-      if (draw_pixel_grid_) {
-        // use some transparency for pixel gridlines
-        g2d.setColor(new Color(0, 0, 0, 0.3f));
-        
-        // draw the vertical gridlines
+    /* proceed to draw gridlines so long as there is a clip area to reference
+     and we want to draw at least one kind of grid */
+    if (clipArea != null && (draw_pixel_grid_ || draw_tile_grid_)) {
+      for (int y = tileset_y_min; y < tileset_y_max; y++) {
         for (int x = tileset_x_min; x < tileset_x_max; x++) {
-          g2d.drawLine(x * scale_factor_, clipArea.y,
-                       x * scale_factor_, clipArea.y + clipArea.height);
-        }
-        // draw the horizontal gridlines
-        for (int y = tileset_y_min; y < tileset_y_max; y++) {
-          g2d.drawLine(clipArea.x, y * scale_factor_,
-                       clipArea.x + clipArea.width, y * scale_factor_);
-        }
-      }
-      
-      // draw gridlines for the tiles if needed
-      if (draw_tile_grid_) {
-        // use a completely opaque tile gridline
-        g2d.setColor(new Color(0, 0, 0, 1f));
-        // use a stroke thickness based on the scale factor
-        g2d.setStroke(
-          new BasicStroke((float) (Math.log(scale_factor_) / Math.log(2)) / 2)
-        );
-        
-        // draw the vertical gridlines
-        for (int x = tileset_x_min & -16;
-                 x < tileset_x_max; x += Tileset.TILE_WIDTH) {
-          g2d.drawLine(x * scale_factor_, clipArea.y,
-                       x * scale_factor_, clipArea.y + clipArea.height);
-        }
-        // draw the horizontal gridlines
-        for (int y = tileset_y_min & -16;
-                 y < tileset_y_max; y += Tileset.TILE_HEIGHT) {
-          g2d.drawLine(clipArea.x, y * scale_factor_,
-                       clipArea.x + clipArea.width, y * scale_factor_);
+          Color pixel_color =
+            tileset_controller_.getPixelColor(x, y, palette_controller_);
+          // if null, then this isn't a valid pixel in the tileset
+          if (pixel_color == null) { break; }
+          
+          // get the contrast color and calculate some base screen coordinates
+          Color contrast_color = Palette.contrastColor(pixel_color);
+          int screen_x1 = x * scale_factor_;
+          int screen_y1 = y * scale_factor_;
+          
+          if (draw_pixel_grid_) {
+            // use some transparency for pixel gridlines
+            graphics.setColor(
+              new Color(contrast_color.getRed(), contrast_color.getGreen(),
+                        contrast_color.getBlue(), 32)
+            );
+            
+            graphics.drawRect(screen_x1, screen_y1,
+                              scale_factor_, scale_factor_);
+          }
+          
+          if (draw_tile_grid_) {
+            graphics.setColor(contrast_color);  // tile grid is totally opaque
+            
+            // calculate right / bottom coordinates needed for the tile grid
+            int screen_x2 = screen_x1 + scale_factor_;
+            int screen_y2 = screen_y1 + scale_factor_;
+            
+            if (y % Tileset.TILE_HEIGHT == Tileset.TILE_HEIGHT - 1) {
+              graphics.drawLine(screen_x1, screen_y2, screen_x2, screen_y2);
+            }
+            if (x % Tileset.TILE_WIDTH == Tileset.TILE_WIDTH - 1) {
+              graphics.drawLine(screen_x2, screen_y1, screen_x2, screen_y2);
+            }
+          }
         }
       }
     }
