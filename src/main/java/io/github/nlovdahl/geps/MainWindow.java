@@ -27,6 +27,7 @@ import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.ButtonGroup;
 import javax.swing.JSeparator;
+import javax.swing.KeyStroke;
 
 import javax.swing.SpinnerNumberModel;
 import javax.swing.JSpinner;
@@ -39,6 +40,7 @@ import java.awt.Container;
 import java.awt.BorderLayout;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.event.KeyEvent;
 import java.awt.event.ActionEvent;
 import java.beans.PropertyChangeEvent;
 
@@ -98,120 +100,188 @@ public final class MainWindow extends JFrame {
     // initialize the menu bar
     JMenuBar menu_bar = new JMenuBar();
     
-    JMenu file_menu = new JMenu("File");  // file menu initialization...
+    // file menu initialization...
+    JMenu file_menu = new JMenu("File");
+    
     JMenuItem new_tileset_menu_item = new JMenuItem("New Tileset");
     new_tileset_menu_item.addActionListener(this::NewTilesetAction);
+    new_tileset_menu_item.setAccelerator(KeyStroke.getKeyStroke(
+      KeyEvent.VK_N, KeyEvent.CTRL_DOWN_MASK
+    ));
     file_menu.add(new_tileset_menu_item);
+    
     JMenuItem open_tileset_menu_item = new JMenuItem("Open Tileset...");
     open_tileset_menu_item.addActionListener(this::OpenTilesetAction);
+    open_tileset_menu_item.setAccelerator(KeyStroke.getKeyStroke(
+      KeyEvent.VK_O, KeyEvent.CTRL_DOWN_MASK
+    ));
     file_menu.add(open_tileset_menu_item);
+    
     JMenuItem save_tileset_menu_item = new JMenuItem("Save Tileset");
     save_tileset_menu_item.addActionListener(this::SaveTilesetAction);
+    save_tileset_menu_item.setAccelerator(KeyStroke.getKeyStroke(
+      KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK
+    ));
     file_menu.add(save_tileset_menu_item);
+    
     JMenuItem save_tileset_as_menu_item = new JMenuItem("Save Tileset As...");
     save_tileset_as_menu_item.addActionListener(this::SaveTilesetAsAction);
     file_menu.add(save_tileset_as_menu_item);
+    
     file_menu.add(new JSeparator());
+    
     JMenuItem new_palette_menu_item = new JMenuItem("New Palette");
     new_palette_menu_item.addActionListener(this::NewPaletteAction);
+    new_palette_menu_item.setAccelerator(KeyStroke.getKeyStroke(
+      KeyEvent.VK_N, KeyEvent.CTRL_DOWN_MASK | KeyEvent.ALT_DOWN_MASK
+    ));
     file_menu.add(new_palette_menu_item);
+    
     JMenuItem open_palette_menu_item = new JMenuItem("Open Palette...");
     open_palette_menu_item.addActionListener(this::OpenPaletteAction);
+    open_palette_menu_item.setAccelerator(KeyStroke.getKeyStroke(
+      KeyEvent.VK_O, KeyEvent.CTRL_DOWN_MASK | KeyEvent.ALT_DOWN_MASK
+    ));
     file_menu.add(open_palette_menu_item);
+    
     JMenuItem save_palette_menu_item = new JMenuItem("Save Palette");
     save_palette_menu_item.addActionListener(this::SavePaletteAction);
+    save_palette_menu_item.setAccelerator(KeyStroke.getKeyStroke(
+      KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK | KeyEvent.ALT_DOWN_MASK
+    ));
     file_menu.add(save_palette_menu_item);
+    
     JMenuItem save_palette_as_menu_item = new JMenuItem("Save Palette As...");
     save_palette_as_menu_item.addActionListener(this::SavePaletteAsAction);
     file_menu.add(save_palette_as_menu_item);
+    
     file_menu.add(new JSeparator());
+    
     JMenuItem exit_menu_item = new JMenuItem("Exit");
     exit_menu_item.addActionListener(this::ExitAction);
     file_menu.add(exit_menu_item);
     
-    JMenu edit_menu = new JMenu("Edit");  // edit menu initialization...
+    // edit menu initialization...
+    JMenu edit_menu = new JMenu("Edit");
+    
     tileset_undo_menu_item_ = new JMenuItem("Undo (Tileset)");
     tileset_undo_menu_item_.addActionListener(this::TilesetUndoAction);
+    tileset_undo_menu_item_.setAccelerator(KeyStroke.getKeyStroke(
+      KeyEvent.VK_Z, KeyEvent.CTRL_DOWN_MASK
+    ));
     edit_menu.add(tileset_undo_menu_item_);
+    
     tileset_redo_menu_item_ = new JMenuItem("Redo (Tileset)");
     tileset_redo_menu_item_.addActionListener(this::TilesetRedoAction);
+    tileset_redo_menu_item_.setAccelerator(KeyStroke.getKeyStroke(
+      KeyEvent.VK_Y, KeyEvent.CTRL_DOWN_MASK
+    ));
     edit_menu.add(tileset_redo_menu_item_);
+    
     edit_menu.add(new JSeparator());
+    
     palette_undo_menu_item_ = new JMenuItem("Undo (Palette)");
     palette_undo_menu_item_.addActionListener(this::PaletteUndoAction);
+    palette_undo_menu_item_.setAccelerator(KeyStroke.getKeyStroke(
+      KeyEvent.VK_Z, KeyEvent.CTRL_DOWN_MASK | KeyEvent.ALT_DOWN_MASK
+    ));
     edit_menu.add(palette_undo_menu_item_);
+    
     palette_redo_menu_item_ = new JMenuItem("Redo (Palette)");
     palette_redo_menu_item_.addActionListener(this::PaletteRedoAction);
+    palette_redo_menu_item_.setAccelerator(KeyStroke.getKeyStroke(
+      KeyEvent.VK_Y, KeyEvent.CTRL_DOWN_MASK | KeyEvent.ALT_DOWN_MASK
+    ));
     edit_menu.add(palette_redo_menu_item_);
     
-    JMenu view_menu = new JMenu("View");  // view menu initialization...
+    // view menu initialization...
+    JMenu view_menu = new JMenu("View");
+    
     draw_pixel_grid_menu_item_ = new JCheckBoxMenuItem("Show Pixel Gridlines");
     draw_pixel_grid_menu_item_.addActionListener(
       this::DrawPixelGridChangeAction
     );
     draw_pixel_grid_menu_item_.setSelected(draw_pixel_grid);
     view_menu.add(draw_pixel_grid_menu_item_);
+    
     draw_tile_grid_menu_item_ = new JCheckBoxMenuItem("Show Tile Gridlines");
     draw_tile_grid_menu_item_.addActionListener(this::DrawTileGridChangeAction);
     draw_tile_grid_menu_item_.setSelected(draw_tile_grid);
     view_menu.add(draw_tile_grid_menu_item_);
+    
     JMenuItem tileset_max_width_menu_item =
       new JMenuItem("Max Tileset Width...");
     tileset_max_width_menu_item.addActionListener(
       this::TilesetMaxWidthChangeAction
     );
     view_menu.add(tileset_max_width_menu_item);
+    
     JMenu tileset_zoom_submenu = new JMenu("Tileset Zoom");
     ButtonGroup tileset_zoom_item_group = new ButtonGroup();
+    
     JRadioButtonMenuItem tileset_zoom_1_item = new JRadioButtonMenuItem("x1");
     tileset_zoom_submenu.add(tileset_zoom_1_item);
     tileset_zoom_item_group.add(tileset_zoom_1_item);
     tileset_zoom_1_item.addActionListener(this::TilesetZoomChangeAction);
+    
     JRadioButtonMenuItem tileset_zoom_2_item = new JRadioButtonMenuItem("x2");
     tileset_zoom_submenu.add(tileset_zoom_2_item);
     tileset_zoom_item_group.add(tileset_zoom_2_item);
     tileset_zoom_2_item.addActionListener(this::TilesetZoomChangeAction);
+    
     JRadioButtonMenuItem tileset_zoom_4_item = new JRadioButtonMenuItem("x4");
     tileset_zoom_submenu.add(tileset_zoom_4_item);
     tileset_zoom_item_group.add(tileset_zoom_4_item);
     tileset_zoom_4_item.addActionListener(this::TilesetZoomChangeAction);
+    
     JRadioButtonMenuItem tileset_zoom_8_item = new JRadioButtonMenuItem("x8");
     tileset_zoom_submenu.add(tileset_zoom_8_item);
     tileset_zoom_item_group.add(tileset_zoom_8_item);
     tileset_zoom_8_item.addActionListener(this::TilesetZoomChangeAction);
+    
     JRadioButtonMenuItem tileset_zoom_16_item = new JRadioButtonMenuItem("x16");
     tileset_zoom_submenu.add(tileset_zoom_16_item);
     tileset_zoom_item_group.add(tileset_zoom_16_item);
     tileset_zoom_16_item.addActionListener(this::TilesetZoomChangeAction);
+    
     JRadioButtonMenuItem tileset_zoom_32_item = new JRadioButtonMenuItem("x32");
     tileset_zoom_submenu.add(tileset_zoom_32_item);
     tileset_zoom_item_group.add(tileset_zoom_32_item);
+    
     tileset_zoom_32_item.addActionListener(this::TilesetZoomChangeAction);
     tileset_zoom_8_item.setSelected(true);  // begin with x8 zoom by default
     view_menu.add(tileset_zoom_submenu);
     
-    JMenu format_menu = new JMenu("Format");  // format menu initialization...
+    // format menu initialization...
+    JMenu format_menu = new JMenu("Format");
+    
     JMenuItem tileset_size_menu_item = new JMenuItem("Tileset Size...");
     tileset_size_menu_item.addActionListener(this::TilesetSizeChangeAction);
     format_menu.add(tileset_size_menu_item);
+    
     JMenu bpp_submenu = new JMenu("Bits per Pixel");
     ButtonGroup bpp_item_group = new ButtonGroup();
+    
     one_bpp_item_ = new JRadioButtonMenuItem("1 BPP");
     bpp_submenu.add(one_bpp_item_);
     bpp_item_group.add(one_bpp_item_);
     one_bpp_item_.addActionListener(this::BPPChangeAction);
+    
     two_bpp_item_ = new JRadioButtonMenuItem("2 BPP");
     bpp_submenu.add(two_bpp_item_);
     bpp_item_group.add(two_bpp_item_);
     two_bpp_item_.addActionListener(this::BPPChangeAction);
+    
     three_bpp_item_ = new JRadioButtonMenuItem("3 BPP");
     bpp_submenu.add(three_bpp_item_);
     bpp_item_group.add(three_bpp_item_);
     three_bpp_item_.addActionListener(this::BPPChangeAction);
+    
     four_bpp_item_ = new JRadioButtonMenuItem("4 BPP");
     bpp_submenu.add(four_bpp_item_);
     bpp_item_group.add(four_bpp_item_);
     four_bpp_item_.addActionListener(this::BPPChangeAction);
+    
     eight_bpp_item_ = new JRadioButtonMenuItem("8 BPP");
     bpp_submenu.add(eight_bpp_item_);
     bpp_item_group.add(eight_bpp_item_);
@@ -220,37 +290,48 @@ public final class MainWindow extends JFrame {
     
     JMenu tileset_format_submenu = new JMenu("Tileset Format");
     ButtonGroup tileset_format_item_group = new ButtonGroup();
+    
     serial_tileset_format_item_ =
       new JRadioButtonMenuItem(SERIAL_FORMAT_STRING);
     tileset_format_submenu.add(serial_tileset_format_item_);
     tileset_format_item_group.add(serial_tileset_format_item_);
     serial_tileset_format_item_.addActionListener(
-      this::TilesetFormatChangeAction);
+      this::TilesetFormatChangeAction
+    );
+    
     planar_tileset_format_item_ =
       new JRadioButtonMenuItem(PLANAR_FORMAT_STRING);
     tileset_format_submenu.add(planar_tileset_format_item_);
     tileset_format_item_group.add(planar_tileset_format_item_);
     planar_tileset_format_item_.addActionListener(
-      this::TilesetFormatChangeAction);
+      this::TilesetFormatChangeAction
+    );
+    
     linear_intertwined_tileset_format_item_ =
       new JRadioButtonMenuItem(LINEAR_INTERTWINED_FORMAT_STRING);
     tileset_format_submenu.add(linear_intertwined_tileset_format_item_);
     tileset_format_item_group.add(linear_intertwined_tileset_format_item_);
     linear_intertwined_tileset_format_item_.addActionListener(
-      this::TilesetFormatChangeAction);
+      this::TilesetFormatChangeAction
+    );
+    
     paired_intertwined_tileset_format_item_ =
       new JRadioButtonMenuItem(PAIRED_INTERTWINED_FORMAT_STRING);
     tileset_format_submenu.add(paired_intertwined_tileset_format_item_);
     tileset_format_item_group.add(paired_intertwined_tileset_format_item_);
     paired_intertwined_tileset_format_item_.addActionListener(
       this::TilesetFormatChangeAction);
+    
     format_menu.add(tileset_format_submenu);
     
+    // help menu initialization...
     JMenu help_menu = new JMenu("Help");
+    
     JMenuItem about_menu_item = new JMenuItem("About");
     about_menu_item.addActionListener(this::AboutAction);
     help_menu.add(about_menu_item);
     
+    // combine the menus into the menu bar and then set the menu
     menu_bar.add(file_menu);
     menu_bar.add(edit_menu);
     menu_bar.add(view_menu);
