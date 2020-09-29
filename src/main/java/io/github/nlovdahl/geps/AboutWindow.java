@@ -35,8 +35,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 
 /**
- * A dialog window which presents the user with some informat about the program,
- * and the program's license.
+ * A dialog window which presents the user with some information about the
+ * program and the program's license.
  * 
  * @author Nicholas Lovdahl
  */
