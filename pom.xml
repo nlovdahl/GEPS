@@ -10,6 +10,14 @@
     <maven.compiler.source>14</maven.compiler.source>
     <maven.compiler.target>14</maven.compiler.target>
   </properties>
+  
+  <distributionManagement>
+    <repository>
+      <id>github</id>
+      <name>GitHub Packages</name>
+      <url>https://maven.pkg.github.com/nlovdahl/GEPS</url>
+    </repository>
+  </distributionManagement>
     
   <build>
     <plugins>
