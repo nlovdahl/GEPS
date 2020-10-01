@@ -17,7 +17,7 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 14 # pom.xml specifies OpenJDK version 14
-        server-di: github
+        server-id: github
         settings-path: ${{ github.workspace }}
 
     - name: Cache Maven Packages
