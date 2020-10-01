@@ -28,7 +28,7 @@ jobs:
         restore-keys: ${{ runner.os }}-m2
 
     - name: Build Release
-      run: mvn -B package --file pom.xlm
+      run: mvn -B package --file pom.xml
 
     - name: Publish Release Build
       run: mvn deploy -s $GITHUB_WORKSPACE/settings.xml
